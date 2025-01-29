@@ -20,6 +20,7 @@ func main() {
 	authRoutes.Use(middleware.JWTAuth())
 	{
 		authRoutes.PUT("/profile", handlers.UpdateUser)
+		authRoutes.POST("/logout", handlers.Logout)
 	}
 
 	router.Run(":8080")

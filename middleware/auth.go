@@ -19,6 +19,7 @@ func JWTAuth() gin.HandlerFunc {
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return []byte("your_jwt_secret"), nil
 		})
@@ -28,10 +29,16 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
+		var blacklistedToken models.BlacklistedToken
+		if err := database.DB.Where("token = ?", tokenString).First(&blacklistedToken).Error; err == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token revoked. Please login again"})
+			return
+		}
+
 		claims := token.Claims.(jwt.MapClaims)
 		userID := uint(claims["userID"].(float64))
-
 		c.Set("userID", userID)
+
 		c.Next()
 	}
 }
