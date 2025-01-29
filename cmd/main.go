@@ -3,6 +3,7 @@ package main
 import (
 	"thinkink-core-backend/database"
 	"thinkink-core-backend/handlers"
+	"thinkink-core-backend/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,6 +15,12 @@ func main() {
 
 	router.POST("/register", handlers.Register)
 	router.POST("/login", handlers.Login)
+
+	authRoutes := router.Group("/users")
+	authRoutes.Use(middleware.JWTAuth())
+	{
+		authRoutes.PUT("/profile", handlers.UpdateUser)
+	}
 
 	router.Run(":8080")
 }

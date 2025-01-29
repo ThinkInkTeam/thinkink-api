@@ -100,3 +100,68 @@ func Login(c *gin.Context) {
 		},
 	})
 }
+
+type UpdateUserInput struct {
+    Name         *string `json:"name,omitempty"`
+    Email        *string `json:"email,omitempty" binding:"omitempty,email"`
+    Password     *string `json:"password,omitempty" binding:"omitempty,min=8"`
+    Mobile       *string `json:"mobile,omitempty"`
+    CountryCode  *string `json:"country_code,omitempty"`
+    Address      *string `json:"address,omitempty"`
+    City         *string `json:"city,omitempty"`
+    Country      *string `json:"country,omitempty"`
+    PostalCode   *string `json:"postal_code,omitempty"`
+    PaymentInfo  map[string]interface{} `json:"payment_info,omitempty"`
+}
+
+func UpdateUser(c *gin.Context) {
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    var input UpdateUserInput
+    if err := c.ShouldBindJSON(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    var user models.User
+    if err := database.DB.First(&user, userID).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        return
+    }
+
+    if input.Email != nil && *input.Email != user.Email {
+        var existingUser models.User
+        if err := database.DB.Where("email = ?", *input.Email).First(&existingUser).Error; err == nil {
+            c.JSON(http.StatusConflict, gin.H{"error": "Email already in use"})
+            return
+        }
+        user.Email = *input.Email
+    }
+
+    if input.Name != nil {
+        user.Name = *input.Name
+    }
+    if input.Mobile != nil {
+        user.Mobile = input.Mobile
+    }
+
+    if input.Password != nil {
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost)
+        if err != nil {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Password hashing failed"})
+            return
+        }
+        user.PasswordHash = string(hashedPassword)
+    }
+
+    if err := database.DB.Save(&user).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+}
