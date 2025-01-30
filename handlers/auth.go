@@ -16,7 +16,7 @@ import (
 type RegistrationInput struct {
 	Name        string                 `json:"name" binding:"required"`
 	Email       string                 `json:"email" binding:"required,email"`
-	Password    string                 `json:"password" binding:"required,min=8"`
+	Password    string                 `json:"password" binding:"required"`
 	DateOfBirth string                 `json:"date_of_birth" binding:"required"`
 	Mobile      *string                `json:"mobile,omitempty"`
 	CountryCode *string                `json:"country_code,omitempty"`
@@ -50,7 +50,7 @@ func Register(c *gin.Context) {
 	user := models.User{
 		Name:        input.Name,
 		Email:       input.Email,
-		Password:    string(hashedPassword),
+		PasswordHash:    string(hashedPassword),
 		DateOfBirth: dob,
 		Mobile:      input.Mobile,
 		CountryCode: input.CountryCode,
@@ -151,7 +151,7 @@ func UpdateUser(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Password hashing failed"})
 			return
 		}
-		user.Password = string(hashedPassword)
+		user.PasswordHash = string(hashedPassword)
 	}
 
 	if err := database.DB.Save(&user).Error; err != nil {
