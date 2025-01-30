@@ -16,7 +16,7 @@ import (
 type RegistrationInput struct {
 	Name        string                 `json:"name" binding:"required"`
 	Email       string                 `json:"email" binding:"required,email"`
-	Password    string                 `json:"password" binding:"required"`
+	Password    string                 `json:"password" binding:"required,min=8"`
 	DateOfBirth string                 `json:"date_of_birth" binding:"required"`
 	Mobile      *string                `json:"mobile,omitempty"`
 	CountryCode *string                `json:"country_code,omitempty"`
