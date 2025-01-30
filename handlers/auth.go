@@ -1,16 +1,15 @@
 package handlers
 
 import (
-	"github.com/ThinkInkTeam/thinkink-core-backend/database"
-	"github.com/ThinkInkTeam/thinkink-core-backend/models"
-
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/ThinkInkTeam/thinkink-core-backend/database"
+	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -86,7 +85,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password)); err != nil {
+	if err := user.ValidatePassword(credentials.Password); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -136,15 +135,9 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if input.Email != nil && *input.Email != user.Email {
-		var existingUser models.User
-		if err := database.DB.Where("email = ?", *input.Email).First(&existingUser).Error; err == nil {
-			c.JSON(http.StatusConflict, gin.H{"error": "Email already in use"})
-			return
-		}
+	if input.Email != nil {
 		user.Email = *input.Email
 	}
-
 	if input.Name != nil {
 		user.Name = *input.Name
 	}
@@ -162,7 +155,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if err := database.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Update failed"})
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
