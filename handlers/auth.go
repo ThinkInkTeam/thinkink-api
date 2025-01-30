@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"github.com/ThinkInkTeam/thinkink-core-backend/database"
+	"github.com/ThinkInkTeam/thinkink-core-backend/models"
+
 	"net/http"
 	"os"
 	"strings"
-	"thinkink-core-backend/database"
-	"thinkink-core-backend/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,20 +49,20 @@ func Register(c *gin.Context) {
 	}
 
 	user := models.User{
-		Name:         input.Name,
-		Email:        input.Email,
-		PasswordHash: string(hashedPassword),
-		DateOfBirth:  dob,
-		Mobile:       input.Mobile,
-		CountryCode:  input.CountryCode,
-		Address:      input.Address,
-		City:         input.City,
-		Country:      input.Country,
-		PostalCode:   input.PostalCode,
+		Name:        input.Name,
+		Email:       input.Email,
+		Password:    string(hashedPassword),
+		DateOfBirth: dob,
+		Mobile:      input.Mobile,
+		CountryCode: input.CountryCode,
+		Address:     input.Address,
+		City:        input.City,
+		Country:     input.Country,
+		PostalCode:  input.PostalCode,
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -85,7 +86,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(credentials.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
@@ -99,7 +100,6 @@ func Login(c *gin.Context) {
 			"id":    user.ID,
 			"name":  user.Name,
 			"email": user.Email,
-			"role":  user.Role,
 		},
 	})
 }
@@ -158,7 +158,7 @@ func UpdateUser(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Password hashing failed"})
 			return
 		}
-		user.PasswordHash = string(hashedPassword)
+		user.Password = string(hashedPassword)
 	}
 
 	if err := database.DB.Save(&user).Error; err != nil {

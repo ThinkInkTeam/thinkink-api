@@ -1,10 +1,10 @@
 package middleware
 
 import (
+	"github.com/ThinkInkTeam/thinkink-core-backend/database"
+	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 	"net/http"
 	"strings"
-	"thinkink-core-backend/database"
-	"thinkink-core-backend/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"

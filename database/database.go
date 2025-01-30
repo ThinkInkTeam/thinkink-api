@@ -3,7 +3,8 @@ package database
 import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"thinkink-core-backend/models"
+
+	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 )
 
 var DB *gorm.DB
