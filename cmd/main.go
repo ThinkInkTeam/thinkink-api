@@ -21,6 +21,7 @@ func main() {
 	{
 		authRoutes.PUT("/profile", handlers.UpdateUser)
 		authRoutes.POST("/logout", handlers.Logout)
+		authRoutes.POST("/upload", handlers.UploadSignalFile)
 	}
 
 	router.Run(":8080")

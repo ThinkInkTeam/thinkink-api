@@ -15,6 +15,6 @@ func ConnectDB() {
 		panic("Failed to connect to database")
 	}
 
-	db.AutoMigrate(&models.User{}, &models.Report{}, &models.BlacklistedToken{})
+	db.AutoMigrate(&models.User{}, &models.Report{}, &models.BlacklistedToken{}, &models.SignalFile{})
 	DB = db
 }
