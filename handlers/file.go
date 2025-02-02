@@ -18,6 +18,21 @@ const (
 	MaxUploadSize = 50 << 20
 )
 
+// UploadSignalFile handles the upload of signal files.
+//
+// @Summary Upload a signal file
+// @Description Uploads a signal file and stores metadata in the database
+// @Tags Signal Files
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "File to upload"
+// @Success 200 {object} map[string]interface{} "File uploaded successfully"
+// @Failure 400 {object} map[string]string "Bad Request - No file uploaded or file too large"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Internal Server Error - Could not create upload directory or failed to save file"
+// @Security BearerAuth
+// @Router /upload [post]
+
 func UploadSignalFile(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {

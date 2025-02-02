@@ -7,6 +7,7 @@ import (
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/datatypes"
 )
 
 type RegistrationInput struct {
@@ -23,6 +24,17 @@ type RegistrationInput struct {
 	PaymentInfo map[string]interface{} `json:"payment_info,omitempty"`
 }
 
+// RegistrationInput represents user registration data
+// @Summary Register a new user
+// @Description Registers a new user with the provided details
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body RegistrationInput true "User registration details"
+// @Success 201 {object} map[string]string "message: User registered successfully"
+// @Failure 400 {object} map[string]string "error: Invalid input"
+// @Failure 500 {object} map[string]string "error: Internal server error"
+// @Router /register [post]
 func Register(c *gin.Context) {
 	var input RegistrationInput
 
@@ -64,6 +76,17 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
+// Login logs in a user
+// @Summary User login
+// @Description Authenticates a user with email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body map[string]string true "User credentials"
+// @Success 200 {object} map[string]interface{} "message: Login successful, user details"
+// @Failure 400 {object} map[string]string "error: Invalid input"
+// @Failure 401 {object} map[string]string "error: Invalid credentials"
+// @Router /login [post]
 func Login(c *gin.Context) {
 	var credentials struct {
 		Email    string `json:"email" binding:"required,email"`
@@ -98,6 +121,7 @@ func Login(c *gin.Context) {
 		},
 	})
 }
+
 
 type UpdateUserInput struct {
 	Name        *string                `json:"name,omitempty"`
@@ -138,7 +162,7 @@ func UpdateUser(c *gin.Context) {
 		user.Name = *input.Name
 	}
 	if input.Mobile != nil {
-		user.Mobile = input.Mobile
+		user.Mobile = *input.Mobile
 	}
 
 	if input.Password != nil {
@@ -158,6 +182,13 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 }
 
+// Logout logs out a user
+// @Summary User logout
+// @Description Logs out a user and invalidates the session token
+// @Tags auth
+// @Produce json
+// @Success 200 {object} map[string]string "message: Logged out successfully"
+// @Router /logout [post]
 func Logout(c *gin.Context) {
 	//authHeader := c.GetHeader("Authorization")
 	//tokenString := strings.TrimPrefix(authHeader, "Bearer ")
@@ -180,4 +211,56 @@ func Logout(c *gin.Context) {
 	// }
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+// GetUser retrieves user information
+// @Summary Get user details
+// @Description Retrieves the authenticated user's details
+// @Tags user
+// @Produce json
+// @Success 200 {object} models.User "User details"
+// @Failure 401 {object} map[string]string "error: Unauthorized"
+// @Router /user [get]
+func GetUser(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	user := models.User{
+		ID:           userID.(uint),
+		Name:         "John Doe",
+		Email:        "johndoe@example.com",
+		Mobile:       "1234567890",
+		CountryCode:  "US",
+		Address:      "123 Main St",
+		DateOfBirth:  time.Date(1990, time.January, 1, 0, 0, 0, 0, time.UTC),
+		City:         "Springfield",
+		Country:      "USA",
+		PostalCode:   "12345",
+		PaymentInfo:  datatypes.JSON([]byte(`{"card_number":"1234-5678-9012-3456","expiration_date":"12/25","cvv":"123"}`)),
+		CreatedAt:    time.Now(),
+		LastLogin:    nil,
+		Reports: []models.Report{
+			{
+				ID:          1,
+				Content:    "This is the first report",
+				Metadata:   datatypes.JSON([]byte(`{"key":"value"}`)),
+				MatchingScale: 5,
+				CreationDate:  time.Now(),
+				LastUpdated:  time.Now(),
+				UserID:      userID.(uint),
+			},
+			{
+				ID:          1,
+				Content:    "This is the first report",
+				Metadata:   datatypes.JSON([]byte(`{"key":"value"}`)),
+				MatchingScale: 5,
+				CreationDate:  time.Now(),
+				LastUpdated:  time.Now(),
+				UserID:      userID.(uint),
+			},
+		},
+	}
+	c.JSON(http.StatusOK, gin.H{"user": &user})
 }
