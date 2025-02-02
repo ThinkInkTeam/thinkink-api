@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 	"github.com/google/uuid"
 
@@ -59,10 +58,10 @@ func UploadSignalFile(c *gin.Context) {
 		Status:   "pending",
 	}
 
-	if err := database.DB.Create(&signalFile).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record file"})
-		return
-	}
+	// if err := database.DB.Create(&signalFile).Error; err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record file"})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "File uploaded successfully",

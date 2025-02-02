@@ -1,9 +1,9 @@
 package models
 
 import (
-	"gorm.io/datatypes"
-	"gorm.io/gorm"
 	"time"
+
+	"gorm.io/datatypes"
 )
 
 type Report struct {
