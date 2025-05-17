@@ -1,29 +1,160 @@
 definitions:
-  handlers.RegistrationInput:
+  handlers.AuthResponse:
     properties:
-      address:
+      message:
+        example: Login successful
         type: string
-      city:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
-      country:
+      user:
+        $ref: '#/definitions/handlers.UserInfo'
+    type: object
+  handlers.CancelSubscriptionResponse:
+    properties:
+      message:
+        example: Subscription will be canceled at the end of the current billing period
         type: string
-      country_code:
+      subscription:
+        $ref: '#/definitions/handlers.SubscriptionDetails'
+    type: object
+  handlers.CheckoutResponse:
+    properties:
+      sessionId:
+        example: cs_test_a1b2c3d4e5f6g7h8i9j0
         type: string
-      date_of_birth:
+      url:
+        example: https://checkout.stripe.com/pay/cs_test_a1b2c3d4e5f6g7h8i9j0
         type: string
+    type: object
+  handlers.CreateCheckoutSessionRequest:
+    properties:
+      cancel_url:
+        example: https://yourapp.com/cancel
+        type: string
+      plan_id:
+        example: price_1Oxy3JExamplePriceID
+        type: string
+      success_url:
+        example: https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}
+        type: string
+    required:
+    - cancel_url
+    - plan_id
+    - success_url
+    type: object
+  handlers.CreateOneTimeCheckoutRequest:
+    properties:
+      amount:
+        description: Amount in cents, e.g., 2000 = $20.00
+        example: 2000
+        type: integer
+      cancel_url:
+        example: https://yourapp.com/cancel
+        type: string
+      currency:
+        example: usd
+        type: string
+      product_name:
+        example: Premium Report
+        type: string
+      success_url:
+        example: https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}
+        type: string
+    required:
+    - amount
+    - cancel_url
+    - currency
+    - product_name
+    - success_url
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: Error message
+        type: string
+    type: object
+  handlers.FileUploadResponse:
+    properties:
+      description:
+        example: Sample brain activity data
+        type: string
+      file_id:
+        example: 1
+        type: integer
+      matching_scale:
+        example: 7
+        type: integer
+      message:
+        example: File processed successfully
+        type: string
+      report_id:
+        example: 2
+        type: integer
+    type: object
+  handlers.MessageResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  handlers.ReportsResponse:
+    properties:
+      reports:
+        items:
+          $ref: '#/definitions/models.Report'
+        type: array
+    type: object
+  handlers.SignInRequest:
+    properties:
       email:
-        type: string
-      mobile:
-        type: string
-      name:
+        example: john@example.com
         type: string
       password:
+        example: password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.SignUpRequest:
+    properties:
+      address:
+        example: 123 Main St
+        type: string
+      city:
+        example: New York
+        type: string
+      country:
+        example: US
+        type: string
+      country_code:
+        example: "+1"
+        type: string
+      date_of_birth:
+        example: "1990-01-01T00:00:00Z"
+        type: string
+      email:
+        example: john@example.com
+        type: string
+      mobile:
+        example: "5551234567"
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: password123
         minLength: 8
         type: string
       payment_info:
-        additionalProperties: true
+        additionalProperties:
+          type: string
+        example:
+          '{"card_type"': '"visa"}'
         type: object
       postal_code:
+        example: "10001"
         type: string
     required:
     - date_of_birth
@@ -31,19 +162,146 @@ definitions:
     - name
     - password
     type: object
+  handlers.SortedReportsResponse:
+    properties:
+      reports:
+        items:
+          $ref: '#/definitions/models.Report'
+        type: array
+      sorting:
+        $ref: '#/definitions/handlers.SortingInfo'
+    type: object
+  handlers.SortingInfo:
+    properties:
+      field:
+        example: matching_scale
+        type: string
+      order:
+        example: descending
+        type: string
+    type: object
+  handlers.SubscriptionDetails:
+    properties:
+      cancel_at_period_end:
+        example: true
+        type: boolean
+      current_period_end:
+        type: string
+      id:
+        example: sub_12345
+        type: string
+      status:
+        example: active
+        type: string
+    type: object
+  handlers.SubscriptionResponse:
+    properties:
+      cancel_at_period_end:
+        example: false
+        type: boolean
+      current_period_end:
+        type: string
+      has_subscription:
+        example: true
+        type: boolean
+      plan_id:
+        example: price_1Oxy3JExamplePriceID
+        type: string
+      status:
+        example: active
+        type: string
+      subscription_id:
+        example: sub_12345
+        type: string
+    type: object
+  handlers.TokenResponse:
+    properties:
+      message:
+        example: Token refreshed successfully
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  handlers.UpdateUserRequest:
+    properties:
+      address:
+        example: 123 Main St
+        type: string
+      city:
+        example: New York
+        type: string
+      country:
+        example: US
+        type: string
+      country_code:
+        example: "+1"
+        type: string
+      mobile:
+        example: "5551234567"
+        type: string
+      name:
+        example: John Doe
+        type: string
+      payment_info:
+        additionalProperties:
+          type: string
+        example:
+          '{"card_type"': '"visa"}'
+        type: object
+      postal_code:
+        example: "10001"
+        type: string
+    type: object
+  handlers.UserInfo:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: John Doe
+        type: string
+    type: object
+  handlers.UserResponse:
+    properties:
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  handlers.UserUpdateResponse:
+    properties:
+      message:
+        example: User updated successfully
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  handlers.WebhookResponse:
+    properties:
+      received:
+        example: true
+        type: boolean
+    type: object
   models.Report:
     properties:
       content:
+        example: '{"key":"value"}'
         type: string
-      creation_date:
+      created_at:
+        type: string
+      description:
+        type: string
+      file_url:
         type: string
       id:
         type: integer
-      last_updated:
-        type: string
       matching_scale:
         type: integer
-      metadata:
+      title:
+        type: string
+      updated_at:
         type: string
       user_id:
         type: integer
@@ -60,6 +318,8 @@ definitions:
         type: string
       created_at:
         type: string
+      current_plan_id:
+        type: string
       date_of_birth:
         type: string
       email:
@@ -75,6 +335,7 @@ definitions:
       password:
         type: string
       payment_info:
+        example: '{"card_type":"visa"}'
         type: string
       postal_code:
         type: string
@@ -82,19 +343,49 @@ definitions:
         items:
           $ref: '#/definitions/models.Report'
         type: array
+      stripe_customer_id:
+        description: Stripe fields
+        type: string
+      stripe_default_payment_method:
+        type: string
+      subscription_ends_at:
+        type: string
+      subscription_id:
+        type: string
+      subscription_status:
+        type: string
     type: object
 info:
   contact: {}
 paths:
-  /login:
+  /check-auth:
+    get:
+      description: Check if the current token is valid and not blacklisted
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User authentication status
+          schema:
+            $ref: '#/definitions/handlers.AuthResponse'
+        "401":
+          description: Unauthorized - Invalid or blacklisted token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Validate authentication token
+      tags:
+      - auth
+  /forgot-password:
     post:
       consumes:
       - application/json
-      description: Authenticates a user with email and password
+      description: Send a password reset link to the user's email
       parameters:
-      - description: User credentials
+      - description: User email
         in: body
-        name: input
+        name: email
         required: true
         schema:
           additionalProperties:
@@ -104,25 +395,32 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'message: Login successful, user details'
+          description: 'message: Password reset email sent'
           schema:
-            additionalProperties: true
+            additionalProperties:
+              type: string
             type: object
         "400":
-          description: 'error: Invalid input'
+          description: Bad Request - Invalid input
           schema:
             additionalProperties:
               type: string
             type: object
-        "401":
-          description: 'error: Invalid credentials'
+        "404":
+          description: Not Found - User not found
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: User login
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Request password reset
       tags:
-      - auth
+      - Authentication
   /logout:
     post:
       description: Logs out a user and invalidates the session token
@@ -130,67 +428,497 @@ paths:
       - application/json
       responses:
         "200":
-          description: 'message: Logged out successfully'
+          description: Logged out successfully
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: User logout
       tags:
       - auth
-  /register:
+  /payment/checkout/one-time:
     post:
       consumes:
       - application/json
-      description: Registers a new user with the provided details
+      description: Creates a Stripe checkout session for one-time payments
       parameters:
-      - description: User registration details
+      - description: One-time checkout details
         in: body
-        name: input
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.RegistrationInput'
+          $ref: '#/definitions/handlers.CreateOneTimeCheckoutRequest'
       produces:
       - application/json
       responses:
-        "201":
-          description: 'message: User registered successfully'
+        "200":
+          description: Checkout session created
+          schema:
+            $ref: '#/definitions/handlers.CheckoutResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a one-time payment checkout session
+      tags:
+      - payment
+  /payment/checkout/subscription:
+    post:
+      consumes:
+      - application/json
+      description: Creates a Stripe checkout session for subscription payments
+      parameters:
+      - description: Checkout session details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateCheckoutSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Checkout session created
+          schema:
+            $ref: '#/definitions/handlers.CheckoutResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a subscription checkout session
+      tags:
+      - payment
+  /payment/subscription:
+    get:
+      consumes:
+      - application/json
+      description: Returns details about the user's current subscription
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Subscription details
+          schema:
+            $ref: '#/definitions/handlers.SubscriptionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get subscription details
+      tags:
+      - payment
+  /payment/subscription/cancel:
+    post:
+      consumes:
+      - application/json
+      description: Cancels the user's subscription at the end of the current billing
+        period
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Subscription canceled
+          schema:
+            $ref: '#/definitions/handlers.CancelSubscriptionResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel a subscription
+      tags:
+      - payment
+  /refresh-token:
+    post:
+      description: Generate a new JWT token using a valid existing token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/handlers.TokenResponse'
+        "401":
+          description: Unauthorized - Invalid or blacklisted token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Refresh authentication token
+      tags:
+      - auth
+  /reports:
+    get:
+      description: Retrieves all reports belonging to the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user reports
+          schema:
+            $ref: '#/definitions/handlers.ReportsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get all user reports
+      tags:
+      - reports
+  /reports/sorted:
+    get:
+      description: Retrieves all reports belonging to the authenticated user, sorted
+        by matching scale
+      parameters:
+      - description: Sort ascending (true) or descending (false, default)
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user reports sorted by matching scale
+          schema:
+            $ref: '#/definitions/handlers.SortedReportsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user reports sorted by matching scale
+      tags:
+      - reports
+  /reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset the user's password using a valid reset token
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: reset_info
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'message: Password reset successful'
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: 'error: Invalid input'
+          description: Bad Request - Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized - Invalid or expired token
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: 'error: Internal server error'
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
             type: object
+      summary: Reset user password
+      tags:
+      - Authentication
+  /signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user with email and password
+      parameters:
+      - description: User Credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User authenticated successfully with token
+          schema:
+            $ref: '#/definitions/handlers.AuthResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid credentials
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Authenticate a user
+      tags:
+      - auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with the provided information
+      parameters:
+      - description: User Registration Information
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created successfully with token
+          schema:
+            $ref: '#/definitions/handlers.AuthResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Register a new user
       tags:
       - auth
-  /user:
+  /stripe/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Handles Stripe webhook events for subscription updates, payments,
+        etc.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Webhook processed
+          schema:
+            $ref: '#/definitions/handlers.WebhookResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Process Stripe webhook events
+      tags:
+      - webhook
+  /upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a signal file and stores metadata in the database with
+        matching scale
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - default: 5
+        description: Matching scale (1-10)
+        in: formData
+        name: matchingScale
+        type: integer
+      - default: '""'
+        description: Description of the file
+        in: formData
+        name: description
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File uploaded successfully
+          schema:
+            $ref: '#/definitions/handlers.FileUploadResponse'
+        "400":
+          description: Bad Request - No file uploaded, file too large, or invalid
+            matching scale
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload a signal file
+      tags:
+      - files
+  /user/{id}:
     get:
-      description: Retrieves the authenticated user's details
+      consumes:
+      - application/json
+      description: Get user details by ID (must be authenticated)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: User details
           schema:
-            $ref: '#/definitions/models.User'
-        "401":
-          description: 'error: Unauthorized'
+            $ref: '#/definitions/handlers.UserResponse'
+        "400":
+          description: Bad Request - Invalid ID
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get user details
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden - Trying to access other user's profile
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
       tags:
-      - user
+      - users
+  /user/{id}/update:
+    put:
+      consumes:
+      - application/json
+      description: Update user details (must be authenticated and own profile)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User details to update
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user details
+          schema:
+            $ref: '#/definitions/handlers.UserUpdateResponse'
+        "400":
+          description: Bad Request - Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden - Trying to update other user's profile
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found - User not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - users
 swagger: "2.0"

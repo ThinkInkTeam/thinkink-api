@@ -15,9 +15,40 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/login": {
+        "/check-auth": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Check if the current token is valid and not blacklisted",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Validate authentication token",
+                "responses": {
+                    "200": {
+                        "description": "User authentication status",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AuthResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or blacklisted token",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/forgot-password": {
             "post": {
-                "description": "Authenticates a user with email and password",
+                "description": "Send a password reset link to the user's email",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,13 +56,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Authentication"
                 ],
-                "summary": "User login",
+                "summary": "Request password reset",
                 "parameters": [
                     {
-                        "description": "User credentials",
-                        "name": "input",
+                        "description": "User email",
+                        "name": "email",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -44,14 +75,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "message: Login successful, user details",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "error: Invalid input",
+                        "description": "message: Password reset email sent",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -59,8 +83,26 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "401": {
-                        "description": "error: Invalid credentials",
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -73,6 +115,11 @@ const docTemplate = `{
         },
         "/logout": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Logs out a user and invalidates the session token",
                 "produces": [
                     "application/json"
@@ -83,7 +130,414 @@ const docTemplate = `{
                 "summary": "User logout",
                 "responses": {
                     "200": {
-                        "description": "message: Logged out successfully",
+                        "description": "Logged out successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/checkout/one-time": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a Stripe checkout session for one-time payments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Create a one-time payment checkout session",
+                "parameters": [
+                    {
+                        "description": "One-time checkout details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateOneTimeCheckoutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Checkout session created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CheckoutResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/checkout/subscription": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a Stripe checkout session for subscription payments",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Create a subscription checkout session",
+                "parameters": [
+                    {
+                        "description": "Checkout session details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateCheckoutSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Checkout session created",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CheckoutResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/subscription": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns details about the user's current subscription",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Get subscription details",
+                "responses": {
+                    "200": {
+                        "description": "Subscription details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SubscriptionResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/payment/subscription/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancels the user's subscription at the end of the current billing period",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Cancel a subscription",
+                "responses": {
+                    "200": {
+                        "description": "Subscription canceled",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CancelSubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/refresh-token": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generate a new JWT token using a valid existing token",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh authentication token",
+                "responses": {
+                    "200": {
+                        "description": "Token refreshed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TokenResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or blacklisted token",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reports": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all reports belonging to the authenticated user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get all user reports",
+                "responses": {
+                    "200": {
+                        "description": "List of user reports",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ReportsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reports/sorted": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all reports belonging to the authenticated user, sorted by matching scale",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get user reports sorted by matching scale",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sort ascending (true) or descending (false, default)",
+                        "name": "asc",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of user reports sorted by matching scale",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SortedReportsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reset-password": {
+            "post": {
+                "description": "Reset the user's password using a valid reset token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Reset user password",
+                "parameters": [
+                    {
+                        "description": "Reset token and new password",
+                        "name": "reset_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message: Password reset successful",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or expired token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -94,9 +548,61 @@ const docTemplate = `{
                 }
             }
         },
-        "/register": {
+        "/signin": {
             "post": {
-                "description": "Registers a new user with the provided details",
+                "description": "Authenticate a user with email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Authenticate a user",
+                "parameters": [
+                    {
+                        "description": "User Credentials",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SignInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User authenticated successfully with token",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid credentials",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/signup": {
+            "post": {
+                "description": "Register a new user with the provided information",
                 "consumes": [
                     "application/json"
                 ],
@@ -109,70 +615,273 @@ const docTemplate = `{
                 "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "User registration details",
-                        "name": "input",
+                        "description": "User Registration Information",
+                        "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.RegistrationInput"
+                            "$ref": "#/definitions/handlers.SignUpRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "message: User registered successfully",
+                        "description": "User created successfully with token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.AuthResponse"
                         }
                     },
                     "400": {
-                        "description": "error: Invalid input",
+                        "description": "Bad Request - Invalid input",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "error: Internal server error",
+                        "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/user": {
-            "get": {
-                "description": "Retrieves the authenticated user's details",
+        "/stripe/webhook": {
+            "post": {
+                "description": "Handles Stripe webhook events for subscription updates, payments, etc.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "webhook"
                 ],
-                "summary": "Get user details",
+                "summary": "Process Stripe webhook events",
+                "responses": {
+                    "200": {
+                        "description": "Webhook processed",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.WebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/upload": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a signal file and stores metadata in the database with matching scale",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload a signal file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 5,
+                        "description": "Matching scale (1-10)",
+                        "name": "matchingScale",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"\"",
+                        "description": "Description of the file",
+                        "name": "description",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File uploaded successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.FileUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - No file uploaded, file too large, or invalid matching scale",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get user details by ID (must be authenticated)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "User details",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/handlers.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "error: Unauthorized",
+                        "description": "Unauthorized",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Trying to access other user's profile",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}/update": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update user details (must be authenticated and own profile)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user profile",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User details to update",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated user details",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UserUpdateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Trying to update other user's profile",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - User not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -180,7 +889,174 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.RegistrationInput": {
+        "handlers.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Login successful"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "user": {
+                    "$ref": "#/definitions/handlers.UserInfo"
+                }
+            }
+        },
+        "handlers.CancelSubscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Subscription will be canceled at the end of the current billing period"
+                },
+                "subscription": {
+                    "$ref": "#/definitions/handlers.SubscriptionDetails"
+                }
+            }
+        },
+        "handlers.CheckoutResponse": {
+            "type": "object",
+            "properties": {
+                "sessionId": {
+                    "type": "string",
+                    "example": "cs_test_a1b2c3d4e5f6g7h8i9j0"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://checkout.stripe.com/pay/cs_test_a1b2c3d4e5f6g7h8i9j0"
+                }
+            }
+        },
+        "handlers.CreateCheckoutSessionRequest": {
+            "type": "object",
+            "required": [
+                "cancel_url",
+                "plan_id",
+                "success_url"
+            ],
+            "properties": {
+                "cancel_url": {
+                    "type": "string",
+                    "example": "https://yourapp.com/cancel"
+                },
+                "plan_id": {
+                    "type": "string",
+                    "example": "price_1Oxy3JExamplePriceID"
+                },
+                "success_url": {
+                    "type": "string",
+                    "example": "https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}"
+                }
+            }
+        },
+        "handlers.CreateOneTimeCheckoutRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "cancel_url",
+                "currency",
+                "product_name",
+                "success_url"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "Amount in cents, e.g., 2000 = $20.00",
+                    "type": "integer",
+                    "example": 2000
+                },
+                "cancel_url": {
+                    "type": "string",
+                    "example": "https://yourapp.com/cancel"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "usd"
+                },
+                "product_name": {
+                    "type": "string",
+                    "example": "Premium Report"
+                },
+                "success_url": {
+                    "type": "string",
+                    "example": "https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}"
+                }
+            }
+        },
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Error message"
+                }
+            }
+        },
+        "handlers.FileUploadResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Sample brain activity data"
+                },
+                "file_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "matching_scale": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "message": {
+                    "type": "string",
+                    "example": "File processed successfully"
+                },
+                "report_id": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "handlers.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                }
+            }
+        },
+        "handlers.ReportsResponse": {
+            "type": "object",
+            "properties": {
+                "reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Report"
+                    }
+                }
+            }
+        },
+        "handlers.SignInRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password123"
+                }
+            }
+        },
+        "handlers.SignUpRequest": {
             "type": "object",
             "required": [
                 "date_of_birth",
@@ -190,39 +1066,230 @@ const docTemplate = `{
             ],
             "properties": {
                 "address": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123 Main St"
                 },
                 "city": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "New York"
                 },
                 "country": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "US"
                 },
                 "country_code": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "+1"
                 },
                 "date_of_birth": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1990-01-01T00:00:00Z"
                 },
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "mobile": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "5551234567"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "John Doe"
                 },
                 "password": {
                     "type": "string",
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "password123"
                 },
                 "payment_info": {
                     "type": "object",
-                    "additionalProperties": true
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "{\"card_type\"": "\"visa\"}"
+                    }
                 },
                 "postal_code": {
+                    "type": "string",
+                    "example": "10001"
+                }
+            }
+        },
+        "handlers.SortedReportsResponse": {
+            "type": "object",
+            "properties": {
+                "reports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Report"
+                    }
+                },
+                "sorting": {
+                    "$ref": "#/definitions/handlers.SortingInfo"
+                }
+            }
+        },
+        "handlers.SortingInfo": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string",
+                    "example": "matching_scale"
+                },
+                "order": {
+                    "type": "string",
+                    "example": "descending"
+                }
+            }
+        },
+        "handlers.SubscriptionDetails": {
+            "type": "object",
+            "properties": {
+                "cancel_at_period_end": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "current_period_end": {
                     "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "sub_12345"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                }
+            }
+        },
+        "handlers.SubscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "cancel_at_period_end": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "current_period_end": {
+                    "type": "string"
+                },
+                "has_subscription": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "plan_id": {
+                    "type": "string",
+                    "example": "price_1Oxy3JExamplePriceID"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "subscription_id": {
+                    "type": "string",
+                    "example": "sub_12345"
+                }
+            }
+        },
+        "handlers.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Token refreshed successfully"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "handlers.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "123 Main St"
+                },
+                "city": {
+                    "type": "string",
+                    "example": "New York"
+                },
+                "country": {
+                    "type": "string",
+                    "example": "US"
+                },
+                "country_code": {
+                    "type": "string",
+                    "example": "+1"
+                },
+                "mobile": {
+                    "type": "string",
+                    "example": "5551234567"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "payment_info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "{\"card_type\"": "\"visa\"}"
+                    }
+                },
+                "postal_code": {
+                    "type": "string",
+                    "example": "10001"
+                }
+            }
+        },
+        "handlers.UserInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                }
+            }
+        },
+        "handlers.UserResponse": {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                }
+            }
+        },
+        "handlers.UserUpdateResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "User updated successfully"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                }
+            }
+        },
+        "handlers.WebhookResponse": {
+            "type": "object",
+            "properties": {
+                "received": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -230,21 +1297,28 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "content": {
+                    "type": "string",
+                    "example": "{\"key\":\"value\"}"
+                },
+                "created_at": {
                     "type": "string"
                 },
-                "creation_date": {
+                "description": {
+                    "type": "string"
+                },
+                "file_url": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "last_updated": {
-                    "type": "string"
-                },
                 "matching_scale": {
                     "type": "integer"
                 },
-                "metadata": {
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
                     "type": "string"
                 },
                 "user_id": {
@@ -270,6 +1344,9 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
+                "current_plan_id": {
+                    "type": "string"
+                },
                 "date_of_birth": {
                     "type": "string"
                 },
@@ -292,7 +1369,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "payment_info": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "{\"card_type\":\"visa\"}"
                 },
                 "postal_code": {
                     "type": "string"
@@ -302,6 +1380,22 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Report"
                     }
+                },
+                "stripe_customer_id": {
+                    "description": "Stripe fields",
+                    "type": "string"
+                },
+                "stripe_default_payment_method": {
+                    "type": "string"
+                },
+                "subscription_ends_at": {
+                    "type": "string"
+                },
+                "subscription_id": {
+                    "type": "string"
+                },
+                "subscription_status": {
+                    "type": "string"
                 }
             }
         }

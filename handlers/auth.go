@@ -1,185 +1,172 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
+	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/datatypes"
+	"github.com/golang-jwt/jwt/v5"
 )
 
-type RegistrationInput struct {
-	Name        string                 `json:"name" binding:"required"`
-	Email       string                 `json:"email" binding:"required,email"`
-	Password    string                 `json:"password" binding:"required,min=8"`
-	DateOfBirth string                 `json:"date_of_birth" binding:"required"`
-	Mobile      *string                `json:"mobile,omitempty"`
-	CountryCode *string                `json:"country_code,omitempty"`
-	Address     *string                `json:"address,omitempty"`
-	City        *string                `json:"city,omitempty"`
-	Country     *string                `json:"country,omitempty"`
-	PostalCode  *string                `json:"postal_code,omitempty"`
-	PaymentInfo map[string]interface{} `json:"payment_info,omitempty"`
+// SignUpRequest represents the request for user registration
+type SignUpRequest struct {
+	Name         string                 `json:"name" binding:"required" example:"John Doe"`
+	Email        string                 `json:"email" binding:"required,email" example:"john@example.com"`
+	Password     string                 `json:"password" binding:"required,min=8" example:"password123"`
+	DateOfBirth  time.Time              `json:"date_of_birth" binding:"required" example:"1990-01-01T00:00:00Z"`
+	Mobile       string                 `json:"mobile" example:"5551234567"`
+	CountryCode  string                 `json:"country_code" example:"+1"`
+	Address      string                 `json:"address" example:"123 Main St"`
+	City         string                 `json:"city" example:"New York"`
+	Country      string                 `json:"country" example:"US"`
+	PostalCode   string                 `json:"postal_code" example:"10001"`
+	PaymentInfo  map[string]interface{} `json:"payment_info" swaggertype:"object,string" example:"{\"card_type\":\"visa\"}"`
 }
 
-// RegistrationInput represents user registration data
+// SignInRequest represents the request for user authentication
+type SignInRequest struct {
+	Email    string `json:"email" binding:"required,email" example:"john@example.com"`
+	Password string `json:"password" binding:"required" example:"password123"`
+}
+
+// AuthResponse represents the response for authentication endpoints
+type AuthResponse struct {
+	Message string      `json:"message" example:"Login successful"`
+	User    UserInfo    `json:"user"`
+	Token   string      `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
+// UserInfo represents basic user information
+type UserInfo struct {
+	ID    uint   `json:"id" example:"1"`
+	Name  string `json:"name" example:"John Doe"`
+	Email string `json:"email" example:"john@example.com"`
+}
+
+// TokenResponse represents a response containing just a token
+type TokenResponse struct {
+	Message string `json:"message" example:"Token refreshed successfully"`
+	Token   string `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
+// MessageResponse represents a simple message response
+type MessageResponse struct {
+	Message string `json:"message" example:"Operation completed successfully"`
+}
+
+// SignUp handles user registration
 // @Summary Register a new user
-// @Description Registers a new user with the provided details
+// @Description Register a new user with the provided information
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param input body RegistrationInput true "User registration details"
-// @Success 201 {object} map[string]string "message: User registered successfully"
-// @Failure 400 {object} map[string]string "error: Invalid input"
-// @Failure 500 {object} map[string]string "error: Internal server error"
-// @Router /register [post]
-func Register(c *gin.Context) {
-	var input RegistrationInput
+// @Param user body SignUpRequest true "User Registration Information"
+// @Success 201 {object} AuthResponse "User created successfully with token"
+// @Failure 400 {object} ErrorResponse "Bad Request - Invalid input"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /signup [post]
+func SignUp(c *gin.Context) {
+	var req SignUpRequest
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	_, err := time.Parse("2006-01-02", input.DateOfBirth)
+	user, err := models.CreateUser(
+		database.DB,
+		req.Name,
+		req.Email,
+		req.Password,
+		req.DateOfBirth,
+		req.Mobile,
+		req.CountryCode,
+		req.Address,
+		req.City,
+		req.Country,
+		req.PostalCode,
+		req.PaymentInfo,
+	)
+
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format (YYYY-MM-DD)"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	// hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Password hashing failed"})
-	// 	return
-	// }
-
-	// user := models.User{
-	// 	Name:        input.Name,
-	// 	Email:       input.Email,
-	// 	PasswordHash:    string(hashedPassword),
-	// 	DateOfBirth: dob,
-	// 	Mobile:      input.Mobile,
-	// 	CountryCode: input.CountryCode,
-	// 	Address:     input.Address,
-	// 	City:        input.City,
-	// 	Country:     input.Country,
-	// 	PostalCode:  input.PostalCode,
-	// }
-
-	// if err := database.DB.Create(&user).Error; err != nil {
-	// 	c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-	// 	return
-	// }
-
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-}
-
-// Login logs in a user
-// @Summary User login
-// @Description Authenticates a user with email and password
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param input body map[string]string true "User credentials"
-// @Success 200 {object} map[string]interface{} "message: Login successful, user details"
-// @Failure 400 {object} map[string]string "error: Invalid input"
-// @Failure 401 {object} map[string]string "error: Invalid credentials"
-// @Router /login [post]
-func Login(c *gin.Context) {
-	var credentials struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&credentials); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	token, err := user.GenerateJWT()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
 		return
 	}
 
-	var user models.User
-	// if err := database.DB.Where("email = ?", credentials.Email).First(&user).Error; err != nil {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-	// 	return
-	// }
-
-	// if err := user.ValidatePassword(credentials.Password); err != nil {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-	// 	return
-	// }
-
-	// now := time.Now()
-	// database.DB.Model(&user).Update("last_login", now)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"user": gin.H{
-			"id":    user.ID,
-			"name":  user.Name,
-			"email": user.Email,
+	c.JSON(http.StatusCreated, AuthResponse{
+		Message: "User registered successfully",
+		User: UserInfo{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
 		},
+		Token: token,
 	})
 }
 
+// SignIn handles user authentication
+// @Summary Authenticate a user
+// @Description Authenticate a user with email and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body SignInRequest true "User Credentials"
+// @Success 200 {object} AuthResponse "User authenticated successfully with token"
+// @Failure 400 {object} ErrorResponse "Bad Request - Invalid input"
+// @Failure 401 {object} ErrorResponse "Unauthorized - Invalid credentials"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /signin [post]
+func SignIn(c *gin.Context) {
+	var req SignInRequest
 
-type UpdateUserInput struct {
-	Name        *string                `json:"name,omitempty"`
-	Email       *string                `json:"email,omitempty" binding:"omitempty,email"`
-	Password    *string                `json:"password,omitempty" binding:"omitempty,min=8"`
-	Mobile      *string                `json:"mobile,omitempty"`
-	CountryCode *string                `json:"country_code,omitempty"`
-	Address     *string                `json:"address,omitempty"`
-	City        *string                `json:"city,omitempty"`
-	Country     *string                `json:"country,omitempty"`
-	PostalCode  *string                `json:"postal_code,omitempty"`
-	PaymentInfo map[string]interface{} `json:"payment_info,omitempty"`
-}
-
-func UpdateUser(c *gin.Context) {
-	_, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	var input UpdateUserInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	user, err := models.FindUserByEmail(database.DB, req.Email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid email or password"})
 		return
 	}
 
-	var user models.User
-	// if err := database.DB.First(&user, userID).Error; err != nil {
-	// 	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-	// 	return
-	// }
-
-	if input.Email != nil {
-		user.Email = *input.Email
-	}
-	if input.Name != nil {
-		user.Name = *input.Name
-	}
-	if input.Mobile != nil {
-		user.Mobile = *input.Mobile
+	if err := user.ValidatePassword(req.Password); err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid email or password"})
+		return
 	}
 
-	if input.Password != nil {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*input.Password), bcrypt.DefaultCost)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Password hashing failed"})
-			return
-		}
-		user.PasswordHash = string(hashedPassword)
+	token, err := user.GenerateJWT()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
+		return
 	}
 
-	// if err := database.DB.Save(&user).Error; err != nil {
-	// 	c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-	// 	return
-	// }
+	// Update last login time
+	if err := user.UpdateLastLogin(database.DB); err != nil {
+		// Non-critical error, just log it
+		log.Printf("Failed to update last login time: %v", err)
+	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+	c.JSON(http.StatusOK, AuthResponse{
+		Message: "Login successful",
+		User: UserInfo{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+		},
+		Token: token,
+	})
 }
 
 // Logout logs out a user
@@ -187,80 +174,205 @@ func UpdateUser(c *gin.Context) {
 // @Description Logs out a user and invalidates the session token
 // @Tags auth
 // @Produce json
-// @Success 200 {object} map[string]string "message: Logged out successfully"
+// @Security BearerAuth
+// @Success 200 {object} MessageResponse "Logged out successfully"
+// @Failure 401 {object} ErrorResponse "Unauthorized - Invalid or missing token"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
 // @Router /logout [post]
 func Logout(c *gin.Context) {
-	//authHeader := c.GetHeader("Authorization")
-	//tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	// token, _ := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-	// 	return []byte(os.Getenv("JWT_SECRET")), nil
-	// })
-
-	// claims := token.Claims.(jwt.MapClaims)
-	// exp := time.Unix(int64(claims["exp"].(float64)), 0)
-
-	// blacklistedToken := models.BlacklistedToken{
-	// 	Token:     tokenString,
-	// 	ExpiresAt: exp,
-	// }
-
-	// if err := database.DB.Create(&blacklistedToken).Error; err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Logout failed"})
-	// 	return
-	// }
-
-	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
-}
-
-// GetUser retrieves user information
-// @Summary Get user details
-// @Description Retrieves the authenticated user's details
-// @Tags user
-// @Produce json
-// @Success 200 {object} models.User "User details"
-// @Failure 401 {object} map[string]string "error: Unauthorized"
-// @Router /user [get]
-func GetUser(c *gin.Context) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Authorization header is required"})
 		return
 	}
-	user := models.User{
-		ID:           userID.(uint),
-		Name:         "John Doe",
-		Email:        "johndoe@example.com",
-		Mobile:       "1234567890",
-		CountryCode:  "US",
-		Address:      "123 Main St",
-		DateOfBirth:  time.Date(1990, time.January, 1, 0, 0, 0, 0, time.UTC),
-		City:         "Springfield",
-		Country:      "USA",
-		PostalCode:   "12345",
-		PaymentInfo:  datatypes.JSON([]byte(`{"card_number":"1234-5678-9012-3456","expiration_date":"12/25","cvv":"123"}`)),
-		CreatedAt:    time.Now(),
-		LastLogin:    nil,
-		Reports: []models.Report{
-			{
-				ID:          1,
-				Content:    "This is the first report",
-				Metadata:   datatypes.JSON([]byte(`{"key":"value"}`)),
-				MatchingScale: 5,
-				CreationDate:  time.Now(),
-				LastUpdated:  time.Now(),
-				UserID:      userID.(uint),
-			},
-			{
-				ID:          1,
-				Content:    "This is the first report",
-				Metadata:   datatypes.JSON([]byte(`{"key":"value"}`)),
-				MatchingScale: 5,
-				CreationDate:  time.Now(),
-				LastUpdated:  time.Now(),
-				UserID:      userID.(uint),
-			},
-		},
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Parse the token to get expiration time
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token"})
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user": &user})
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		var exp time.Time
+
+		// Check if exp exists and convert to time.Time
+		if expFloat, ok := claims["exp"].(float64); ok {
+			exp = time.Unix(int64(expFloat), 0)
+		} else {
+			// If no expiration, set a default (1 day)
+			exp = time.Now().Add(24 * time.Hour)
+		}
+
+		// Add the token to blacklist
+		if err := models.AddToBlacklist(database.DB, tokenString, exp); err != nil {
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Logout failed"})
+			return
+		}
+
+		c.JSON(http.StatusOK, MessageResponse{Message: "Logged out successfully"})
+	} else {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Invalid token claims"})
+	}
+}
+
+// RefreshToken generates a new JWT token for the user
+// @Summary Refresh authentication token
+// @Description Generate a new JWT token using a valid existing token
+// @Tags auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} TokenResponse "Token refreshed successfully"
+// @Failure 401 {object} ErrorResponse "Unauthorized - Invalid or blacklisted token"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Router /refresh-token [post]
+func RefreshToken(c *gin.Context) {
+	// Get the user ID from the middleware context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	// Get user from database
+	user, err := models.FindUserByID(database.DB, userID.(uint))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "User not found"})
+		return
+	}
+
+	// Generate a new token
+	token, err := user.GenerateJWT()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, TokenResponse{
+		Message: "Token refreshed successfully",
+		Token:   token,
+	})
+}
+
+// CheckAuth validates if a user's token is valid
+// @Summary Validate authentication token
+// @Description Check if the current token is valid and not blacklisted
+// @Tags auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} AuthResponse "User authentication status"
+// @Failure 401 {object} ErrorResponse "Unauthorized - Invalid or blacklisted token"
+// @Router /check-auth [get]
+func CheckAuth(c *gin.Context) {
+	// Get the user ID from the middleware context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	// Get user from database
+	user, err := models.FindUserByID(database.DB, userID.(uint))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, AuthResponse{
+		Message: "User authentication status",
+		User: UserInfo{
+			ID:    user.ID,
+			Name:  user.Name,
+			Email: user.Email,
+		},
+	})
+}
+
+// ForgotPassword initiates the password reset process
+// @Summary Request password reset
+// @Description Send a password reset link to the user's email
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param email body map[string]string true "User email" example={"email": "user@example.com"}
+// @Success 200 {object} map[string]string "message: Password reset email sent"
+// @Failure 400 {object} map[string]string "Bad Request - Invalid input"
+// @Failure 404 {object} map[string]string "Not Found - User not found"
+// @Failure 500 {object} map[string]string "Internal Server Error"
+// @Router /forgot-password [post]
+func ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := models.FindUserByEmail(database.DB, req.Email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Generate a reset token (in a real app, you'd send this via email)
+	resetToken, err := user.GeneratePasswordResetToken(database.DB)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate reset token"})
+		return
+	}
+
+	// Here you would normally send an email with the reset link
+	// For this implementation, we'll just return the token in the response
+	// In production, you should send an email and not expose the token in the response
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Password reset instructions sent to your email",
+		"reset_token": resetToken, // Remove this line in production
+	})
+}
+
+// ResetPassword completes the password reset process
+// @Summary Reset user password
+// @Description Reset the user's password using a valid reset token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param reset_info body map[string]string true "Reset token and new password" example={"token": "reset-token", "password": "new-password"}
+// @Success 200 {object} map[string]string "message: Password reset successful"
+// @Failure 400 {object} map[string]string "Bad Request - Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized - Invalid or expired token"
+// @Failure 500 {object} map[string]string "Internal Server Error"
+// @Router /reset-password [post]
+func ResetPassword(c *gin.Context) {
+	var req struct {
+		Token    string `json:"token" binding:"required"`
+		Password string `json:"password" binding:"required,min=8"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Verify the reset token and get the associated user
+	user, err := models.VerifyPasswordResetToken(database.DB, req.Token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired reset token"})
+		return
+	}
+
+	// Update the user's password
+	if err := user.UpdatePassword(database.DB, req.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful"})
 }
