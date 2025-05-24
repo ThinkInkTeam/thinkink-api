@@ -56,58 +56,43 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Authentication"
+                    "auth"
                 ],
                 "summary": "Request password reset",
                 "parameters": [
                     {
                         "description": "User email",
-                        "name": "email",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ForgotPasswordRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "message: Password reset email sent",
+                        "description": "Password reset email sent",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ForgotPasswordResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request - Invalid input",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found - User not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -491,58 +476,43 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Authentication"
+                    "auth"
                 ],
                 "summary": "Reset user password",
                 "parameters": [
                     {
                         "description": "Reset token and new password",
-                        "name": "reset_info",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ResetPasswordRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "message: Password reset successful",
+                        "description": "Password reset successful",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request - Invalid input",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized - Invalid or expired token",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -1019,6 +989,27 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.ForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
+        "handlers.ForgotPasswordResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Password reset instructions sent to your email"
+                }
+            }
+        },
         "handlers.MessageResponse": {
             "type": "object",
             "properties": {
@@ -1036,6 +1027,24 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/models.Report"
                     }
+                }
+            }
+        },
+        "handlers.ResetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "token"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "new-password"
+                },
+                "token": {
+                    "type": "string",
+                    "example": "reset-token"
                 }
             }
         },
@@ -1304,9 +1313,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
-                    "type": "string"
-                },
-                "file_url": {
                     "type": "string"
                 },
                 "id": {

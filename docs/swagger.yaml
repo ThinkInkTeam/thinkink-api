@@ -92,6 +92,20 @@ definitions:
         example: 2
         type: integer
     type: object
+  handlers.ForgotPasswordRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
+  handlers.ForgotPasswordResponse:
+    properties:
+      message:
+        example: Password reset instructions sent to your email
+        type: string
+    type: object
   handlers.MessageResponse:
     properties:
       message:
@@ -104,6 +118,19 @@ definitions:
         items:
           $ref: '#/definitions/models.Report'
         type: array
+    type: object
+  handlers.ResetPasswordRequest:
+    properties:
+      password:
+        example: new-password
+        minLength: 8
+        type: string
+      token:
+        example: reset-token
+        type: string
+    required:
+    - password
+    - token
     type: object
   handlers.SignInRequest:
     properties:
@@ -293,8 +320,6 @@ definitions:
         type: string
       description:
         type: string
-      file_url:
-        type: string
       id:
         type: integer
       matching_scale:
@@ -385,42 +410,32 @@ paths:
       parameters:
       - description: User email
         in: body
-        name: email
+        name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/handlers.ForgotPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: 'message: Password reset email sent'
+          description: Password reset email sent
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ForgotPasswordResponse'
         "400":
           description: Bad Request - Invalid input
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Not Found - User not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Request password reset
       tags:
-      - Authentication
+      - auth
   /logout:
     post:
       description: Logs out a user and invalidates the session token
@@ -662,42 +677,32 @@ paths:
       parameters:
       - description: Reset token and new password
         in: body
-        name: reset_info
+        name: request
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/handlers.ResetPasswordRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: 'message: Password reset successful'
+          description: Password reset successful
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.MessageResponse'
         "400":
           description: Bad Request - Invalid input
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized - Invalid or expired token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Reset user password
       tags:
-      - Authentication
+      - auth
   /signin:
     post:
       consumes:

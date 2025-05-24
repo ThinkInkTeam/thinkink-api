@@ -59,6 +59,22 @@ type MessageResponse struct {
 	Message string `json:"message" example:"Operation completed successfully"`
 }
 
+// ForgotPasswordRequest represents the request for password reset initiation
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
+// ForgotPasswordResponse represents the response for password reset initiation
+type ForgotPasswordResponse struct {
+	Message string `json:"message" example:"Password reset instructions sent to your email"`
+}
+
+// ResetPasswordRequest represents the request for password reset completion
+type ResetPasswordRequest struct {
+	Token    string `json:"token" binding:"required" example:"reset-token"`
+	Password string `json:"password" binding:"required,min=8" example:"new-password"`
+}
+
 // SignUp handles user registration
 // @Summary Register a new user
 // @Description Register a new user with the provided information
@@ -296,22 +312,20 @@ func CheckAuth(c *gin.Context) {
 // ForgotPassword initiates the password reset process
 // @Summary Request password reset
 // @Description Send a password reset link to the user's email
-// @Tags Authentication
+// @Tags auth
 // @Accept json
 // @Produce json
-// @Param email body map[string]string true "User email" example={"email": "user@example.com"}
-// @Success 200 {object} map[string]string "message: Password reset email sent"
-// @Failure 400 {object} map[string]string "Bad Request - Invalid input"
-// @Failure 404 {object} map[string]string "Not Found - User not found"
-// @Failure 500 {object} map[string]string "Internal Server Error"
+// @Param request body ForgotPasswordRequest true "User email"
+// @Success 200 {object} ForgotPasswordResponse "Password reset email sent"
+// @Failure 400 {object} ErrorResponse "Bad Request - Invalid input"
+// @Failure 404 {object} ErrorResponse "Not Found - User not found"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
 // @Router /forgot-password [post]
 func ForgotPassword(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required,email"`
-	}
+	var req ForgotPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -332,32 +346,38 @@ func ForgotPassword(c *gin.Context) {
 	// For this implementation, we'll just return the token in the response
 	// In production, you should send an email and not expose the token in the response
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Password reset instructions sent to your email",
-		"reset_token": resetToken, // Remove this line in production
-	})
+	response := ForgotPasswordResponse{
+		Message: "Password reset instructions sent to your email",
+	}
+	
+	// In development mode, you might want to include the token for testing
+	if os.Getenv("APP_ENV") != "production" {
+		c.JSON(http.StatusOK, gin.H{
+			"message": response.Message,
+			"reset_token": resetToken, // Only included in non-production environments
+		})
+	} else {
+		c.JSON(http.StatusOK, response)
+	}
 }
 
 // ResetPassword completes the password reset process
 // @Summary Reset user password
 // @Description Reset the user's password using a valid reset token
-// @Tags Authentication
+// @Tags auth
 // @Accept json
 // @Produce json
-// @Param reset_info body map[string]string true "Reset token and new password" example={"token": "reset-token", "password": "new-password"}
-// @Success 200 {object} map[string]string "message: Password reset successful"
-// @Failure 400 {object} map[string]string "Bad Request - Invalid input"
-// @Failure 401 {object} map[string]string "Unauthorized - Invalid or expired token"
-// @Failure 500 {object} map[string]string "Internal Server Error"
+// @Param request body ResetPasswordRequest true "Reset token and new password"
+// @Success 200 {object} MessageResponse "Password reset successful"
+// @Failure 400 {object} ErrorResponse "Bad Request - Invalid input"
+// @Failure 401 {object} ErrorResponse "Unauthorized - Invalid or expired token"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
 // @Router /reset-password [post]
 func ResetPassword(c *gin.Context) {
-	var req struct {
-		Token    string `json:"token" binding:"required"`
-		Password string `json:"password" binding:"required,min=8"`
-	}
+	var req ResetPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -374,5 +394,5 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful"})
+	c.JSON(http.StatusOK, MessageResponse{Message: "Password reset successful"})
 }
