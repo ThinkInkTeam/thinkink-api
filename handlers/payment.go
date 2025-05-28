@@ -113,8 +113,8 @@ func CreateCheckoutSessionHandler(c *gin.Context) {
 
 	// Create or retrieve customer
 	var customerID string
-	if user.StripeCustomerID != "" {
-		customerID = user.StripeCustomerID
+	if user.StripeCustomerID != nil {
+		customerID = *user.StripeCustomerID
 	} else {
 		// Create new customer in Stripe
 		customerParams := user.ToStripeCustomerParams()
@@ -201,8 +201,8 @@ func CreateOneTimeCheckoutHandler(c *gin.Context) {
 
 	// Create or retrieve customer
 	var customerID string
-	if user.StripeCustomerID != "" {
-		customerID = user.StripeCustomerID
+	if user.StripeCustomerID != nil {
+		customerID = *user.StripeCustomerID
 	} else {
 		// Create new customer in Stripe
 		customerParams := user.ToStripeCustomerParams()
@@ -285,7 +285,7 @@ func CancelSubscriptionHandler(c *gin.Context) {
 	}
 
 	// Check if user has an active subscription
-	if user.SubscriptionID == "" {
+	if user.SubscriptionID == nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No active subscription found"})
 		return
 	}
@@ -296,7 +296,7 @@ func CancelSubscriptionHandler(c *gin.Context) {
 	}
 
 	// Make the API call to cancel
-	subscription, err := sub.Update(user.SubscriptionID, params)
+	subscription, err := sub.Update(*user.SubscriptionID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("Error canceling subscription: %v", err)})
 		return
@@ -304,7 +304,7 @@ func CancelSubscriptionHandler(c *gin.Context) {
 
 	// Update subscription status in database
 	periodEnd := time.Unix(subscription.CurrentPeriodEnd, 0)
-	if err := user.UpdateSubscriptionData(db, subscription.ID, user.CurrentPlanID, string(subscription.Status), &periodEnd); err != nil {
+	if err := user.UpdateSubscriptionData(db, subscription.ID, *user.CurrentPlanID, string(subscription.Status), &periodEnd); err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("Error updating subscription data: %v", err)})
 		return
 	}
@@ -345,7 +345,7 @@ func GetSubscriptionHandler(c *gin.Context) {
 	}
 
 	// Check if user has a subscription
-	if user.SubscriptionID == "" {
+	if user.SubscriptionID == nil {
 		c.JSON(http.StatusOK, SubscriptionResponse{
 			HasSubscription: false,
 		})
@@ -353,7 +353,7 @@ func GetSubscriptionHandler(c *gin.Context) {
 	}
 
 	// Get subscription details from Stripe
-	subscription, err := sub.Get(user.SubscriptionID, nil)
+	subscription, err := sub.Get(*user.SubscriptionID, nil)
 	
 	if err != nil {
 		// If can't retrieve from Stripe, return the local data
@@ -361,8 +361,8 @@ func GetSubscriptionHandler(c *gin.Context) {
 		
 		c.JSON(http.StatusOK, SubscriptionResponse{
 			HasSubscription: user.IsSubscribed(),
-			PlanID:         user.CurrentPlanID,
-			Status:         user.SubscriptionStatus,
+			PlanID:         *user.CurrentPlanID,
+			Status:         *user.SubscriptionStatus,
 			CurrentPeriodEnd: endsAt,
 		})
 		return
@@ -374,7 +374,7 @@ func GetSubscriptionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, SubscriptionResponse{
 		HasSubscription:   subscription.Status == stripe.SubscriptionStatusActive || subscription.Status == stripe.SubscriptionStatusTrialing,
 		SubscriptionID:    subscription.ID,
-		PlanID:            user.CurrentPlanID,
+		PlanID:            *user.CurrentPlanID,
 		Status:            string(subscription.Status),
 		CancelAtPeriodEnd: subscription.CancelAtPeriodEnd,
 		CurrentPeriodEnd:  &periodEnd,
@@ -401,7 +401,7 @@ func StripeWebhookHandler(c *gin.Context) {
 	// Get webhook secret from env
 	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
 	if webhookSecret == "" {
-		webhookSecret = "whsec_your_webhook_secret" // Replace with your test webhook secret for development
+		webhookSecret = "whsec_your_webhook_secret" 
 	}
 
 	// Verify signature
@@ -444,7 +444,7 @@ func StripeWebhookHandler(c *gin.Context) {
 			customerID := sess.Customer.ID
 
 			// Update customer ID if needed
-			if user.StripeCustomerID == "" {
+			if user.StripeCustomerID == nil {
 				user.UpdateStripeData(db, customerID, "")
 			}
 
@@ -474,7 +474,7 @@ func StripeWebhookHandler(c *gin.Context) {
 			}
 
 			// Get customer's payment methods and set the default if needed
-			if user.StripeDefaultPM == "" {
+			if user.StripeDefaultPM == nil {
 				// Get customer to find default payment method
 				cus, err := customer.Get(customerID, nil)
 				if err == nil && cus.InvoiceSettings.DefaultPaymentMethod != nil {
@@ -564,7 +564,7 @@ func StripeWebhookHandler(c *gin.Context) {
 		}
 
 		// If this is the first payment method, set it as default
-		if user.StripeDefaultPM == "" {
+		if user.StripeDefaultPM == nil {
 			user.UpdateStripeData(db, pm.Customer.ID, pm.ID)
 		}
 	}

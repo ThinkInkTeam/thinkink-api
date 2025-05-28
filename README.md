@@ -26,7 +26,7 @@ The application uses PostgreSQL defaults and can be configured with the followin
 export DB_HOST="localhost"
 export DB_USER="postgres"
 export DB_PASSWORD="your_db_password"
-export DB_NAME="thinkink_db"
+export DB_NAME="postgres"
 export DB_PORT="5432"
 export DB_SSL_MODE="disable"  # Use "require" in production
 ```

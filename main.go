@@ -6,10 +6,15 @@ import (
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/api"
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
+	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v72"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	// Initialize database connection using environment variables
 	databaseManager := database.NewDatabaseManager()
 	

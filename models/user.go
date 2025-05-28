@@ -32,11 +32,11 @@ type User struct {
 	LastLogin         *time.Time     `gorm:"type:timestamp" json:"last_login,omitempty"`
 	Reports           []Report       `gorm:"foreignKey:UserID" json:"reports"`
 	// Stripe fields
-	StripeCustomerID  string         `gorm:"type:text;uniqueIndex" json:"stripe_customer_id,omitempty"`
-	StripeDefaultPM   string         `gorm:"type:text" json:"stripe_default_payment_method,omitempty"`
-	CurrentPlanID     string         `gorm:"type:text" json:"current_plan_id,omitempty"`
-	SubscriptionID    string         `gorm:"type:text" json:"subscription_id,omitempty"`
-	SubscriptionStatus string        `gorm:"type:text" json:"subscription_status,omitempty"`
+	StripeCustomerID  *string         `gorm:"type:text;uniqueIndex" json:"stripe_customer_id,omitempty"`
+	StripeDefaultPM   *string         `gorm:"type:text" json:"stripe_default_payment_method,omitempty"`
+	CurrentPlanID     *string         `gorm:"type:text" json:"current_plan_id,omitempty"`
+	SubscriptionID    *string         `gorm:"type:text" json:"subscription_id,omitempty"`
+	SubscriptionStatus *string        `gorm:"type:text" json:"subscription_status,omitempty"`
 	SubscriptionEndsAt *time.Time    `gorm:"type:timestamp" json:"subscription_ends_at,omitempty"`
 }
 
@@ -68,8 +68,8 @@ func (u *User) ToStripeCustomerParams() *stripe.CustomerParams {
 
 // UpdateStripeData updates the Stripe-related user data
 func (u *User) UpdateStripeData(db *gorm.DB, customerID string, defaultPM string) error {
-	u.StripeCustomerID = customerID
-	u.StripeDefaultPM = defaultPM
+	u.StripeCustomerID = &customerID
+	u.StripeDefaultPM = &defaultPM
 	return db.Model(u).Updates(map[string]interface{}{
 		"stripe_customer_id": customerID,
 		"stripe_default_pm": defaultPM,
@@ -78,9 +78,9 @@ func (u *User) UpdateStripeData(db *gorm.DB, customerID string, defaultPM string
 
 // UpdateSubscriptionData updates the subscription data for the user
 func (u *User) UpdateSubscriptionData(db *gorm.DB, subscriptionID, planID, status string, endsAt *time.Time) error {
-	u.SubscriptionID = subscriptionID
-	u.CurrentPlanID = planID
-	u.SubscriptionStatus = status
+	u.SubscriptionID = &subscriptionID
+	u.CurrentPlanID = &planID
+	u.SubscriptionStatus = &status
 	u.SubscriptionEndsAt = endsAt
 	
 	return db.Model(u).Updates(map[string]interface{}{
@@ -93,7 +93,10 @@ func (u *User) UpdateSubscriptionData(db *gorm.DB, subscriptionID, planID, statu
 
 // IsSubscribed checks if the user has an active subscription
 func (u *User) IsSubscribed() bool {
-	return u.SubscriptionStatus == "active" || u.SubscriptionStatus == "trialing"
+	if u.SubscriptionStatus == nil {
+		return false
+	}
+	return *u.SubscriptionStatus == "active" || *u.SubscriptionStatus == "trialing"
 }
 
 // Original User functions
