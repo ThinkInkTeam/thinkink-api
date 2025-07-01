@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package validation;
+option go_package = "github.com/ThinkInkTeam/thinkink-core-backend/proto-gen/proto/validation";
+
+// Token validation service for ML server authentication
+service TokenValidationService {
+  // Validate ML server access token
+  rpc ValidateMLToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+}
+
+// Request message for token validation
+message ValidateTokenRequest {
+  string token = 1;  // JWT token to validate
+}
+
+// ValidateTokenResponse returns validation result
+message ValidateTokenResponse {
+  bool is_valid = 1;
+}

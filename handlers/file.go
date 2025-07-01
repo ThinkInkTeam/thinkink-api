@@ -3,9 +3,11 @@ package handlers
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
+	"github.com/ThinkInkTeam/thinkink-core-backend/services"
 	"github.com/google/uuid"
 
 	"net/http"
@@ -71,8 +73,6 @@ func UploadSignalFile(c *gin.Context) {
 		return
 	}
 	
-	// Get description from form, default to empty string if not provided
-	description := c.DefaultPostForm("description", "")
 
 	if err := os.MkdirAll(UploadDir, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Could not create upload directory"})
@@ -86,6 +86,30 @@ func UploadSignalFile(c *gin.Context) {
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to save file"})
 		return
+	}
+
+	// Get description from form, default to empty string if not provided
+	description :=""
+	
+	// If no description provided, try to get translation from ML server
+	if description == "" {
+		if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+			// Connect to translation service
+			translationClient, err := services.NewTranslationClient("localhost:50052")
+			if err == nil {
+				defer translationClient.Close()
+				fileData, err := os.ReadFile(filePath)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to read file"})
+					return
+				}
+				// Get translation using dummy data
+				translations, err := translationClient.TranslateEEG(authHeader, fileData)
+				if err == nil && len(translations) > 0 {
+					description = strings.Join(translations, " ")
+				}
+			}
+		}
 	}
 
 	signalFile, err := models.CreateSingleFile(

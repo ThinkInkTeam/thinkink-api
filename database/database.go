@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 )
@@ -24,8 +25,19 @@ func NewDatabaseManager() *DatabaseManager {
 func (dm *DatabaseManager) Connect(host, user, password, dbname, port, sslMode string) error {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", 
 		host, user, password, dbname, port, sslMode)
+
+	var loggerConfig logger.Interface
+    enableDBLogs := getEnvWithDefault("DB_ENABLE_LOGS", "false")
+    
+    if enableDBLogs == "true" {
+        loggerConfig = logger.Default.LogMode(logger.Info)
+    } else {
+        loggerConfig = logger.Default.LogMode(logger.Silent)
+    }
 	
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn),  &gorm.Config{
+        Logger: loggerConfig,
+    })
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}

@@ -2,12 +2,16 @@ package main
 
 import (
 	"log"
+	"net"
 	"os"
+	"sync"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/api"
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
+	"github.com/ThinkInkTeam/thinkink-core-backend/services/validation"
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v72"
+	"google.golang.org/grpc"
 )
 
 func main() {
@@ -41,13 +45,33 @@ func main() {
 	stripe.Key = stripeKey
 
 	// Determine port from environment variable or use default
-	port = os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // Default port
+	restPort := os.Getenv("PORT")
+	if restPort == "" {
+		restPort = "8080" // Default port
 	}
 
-	// Start the API server
-	api.RunServer(port)
+	grpcPort := getEnvWithDefault("GRPC_PORT", "50051")
+
+	// Create a WaitGroup to run both servers concurrently
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Start the gRPC server in a goroutine
+	go func() {
+		defer wg.Done()
+		startGRPCServer(grpcPort)
+	}()
+
+	// Start the REST API server in a goroutine
+	go func() {
+		defer wg.Done()
+		api.RunServer(restPort)
+	}()
+
+	log.Printf("Starting servers - REST API on port %s, gRPC on port %s", restPort, grpcPort)
+
+	// Wait for both servers to finish
+	wg.Wait()
 }
 
 // getEnvWithDefault returns the environment variable value or a default if not set
@@ -57,4 +81,21 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+// startGRPCServer starts the gRPC validation server
+func startGRPCServer(port string) {
+	lis, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatalf("Failed to listen on port %s: %v", port, err)
+	}
+
+	grpcServer := grpc.NewServer()
+	validationServer := validation.NewServer()
+	validation.RegisterTokenValidationServiceServer(grpcServer, validationServer)
+
+	log.Printf("gRPC server listening on port %s", port)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve gRPC server: %v", err)
+	}
 }

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package translation;
+option go_package = "github.com/ThinkInkTeam/thinkink-core-backend/proto-gen/proto/translation";
+
+// Translation service for converting EEG signals to text
+service TranslationService {
+  // Translate EEG data to text
+  rpc Translate(TranslateRequest) returns (TranslateResponse);
+}
+
+// Request message for translation
+message TranslateRequest {
+  string token = 1;     // JWT authentication token
+  string content = 2;   // JSON string containing EEG data and mask
+}
+
+// Response message for translation
+message TranslateResponse {
+  repeated string translated = 1;  // Array of translated text outputs
+  string error_message = 2;        // Error message if translation fails
+}

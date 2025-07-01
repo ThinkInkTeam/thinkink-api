@@ -43,7 +43,7 @@ func (sf *SingleFile) ConvertToReport() (*Report, error) {
 	report := &Report{
 		UserID:			sf.UserID,
 		Title:			sf.Filename,
-		Description: 		sf.Description,
+		Description: 	sf.Description,
 		Content:       	datatypes.JSON(content),
 		MatchingScale: 	0,
 		CreatedAt:  	time.Now(),

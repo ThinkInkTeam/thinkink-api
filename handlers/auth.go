@@ -9,6 +9,7 @@ import (
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
+	"github.com/ThinkInkTeam/thinkink-core-backend/services/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -395,4 +396,39 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, MessageResponse{Message: "Password reset successful"})
+}
+
+// ValidateMLTokenRequest represents the request for ML token validation
+type ValidateMLTokenRequest struct {
+	Token string `json:"token" binding:"required" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+}
+
+// ValidateMLTokenResponse represents the response for ML token validation
+type ValidateMLTokenResponse struct {
+	IsValid bool `json:"is_valid" example:"true"`
+}
+
+// ValidateMLToken validates a JWT token for ML services
+// @Summary Validate ML token
+// @Description Validates a JWT token and checks user subscription for ML services
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body ValidateMLTokenRequest true "Token to validate"
+// @Success 200 {object} ValidateMLTokenResponse "Token validation result"
+// @Failure 400 {object} ErrorResponse "Bad Request - Invalid input"
+// @Router /validate-ml-token [post]
+func ValidateMLToken(c *gin.Context) {
+	var req ValidateMLTokenRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Create token validator and validate
+	tokenValidator := validation.NewTokenValidator()
+	isValid := tokenValidator.ValidateToken(req.Token)
+
+	c.JSON(http.StatusOK, ValidateMLTokenResponse{IsValid: isValid})
 }

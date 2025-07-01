@@ -57,6 +57,7 @@ func SetupRouter() *gin.Engine {
 	// Public routes
 	r.POST("/signin", handlers.SignIn)
 	r.POST("/signup", handlers.SignUp)
+	r.POST("/validate-ml-token", handlers.ValidateMLToken)
 	
 	// Stripe webhook handler - needs to be public to receive Stripe events
 	r.POST("/stripe/webhook", handlers.StripeWebhookHandler)

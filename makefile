@@ -1,5 +1,12 @@
 PQ_CONTAINER = postgres
 
+gen-proto: ## Generate protobuf files
+	@echo "Generating protobuf files..."
+	@mkdir -p proto-gen
+	protoc --go_out=proto-gen --go_opt=paths=source_relative \
+		--go-grpc_out=proto-gen --go-grpc_opt=paths=source_relative \
+		proto/translation/translation.proto proto/validation/validation.proto
+
 db-start: ## Start postgres server on a docker container
 	@docker run --rm --name $(PQ_CONTAINER) \
 		-e POSTGRES_USER=postgres \
