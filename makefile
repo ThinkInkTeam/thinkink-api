@@ -27,7 +27,7 @@ db-stop: ## Stop the database container if running
 
 run-server: ## Run the server
 	@echo "Running server..."
-	go run main.go
+	go run ./cmd/main.go
 
 run-all: db-stop sleep db-start sleep run-server ## Run the server with a database
 

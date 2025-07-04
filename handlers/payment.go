@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
+	"github.com/ThinkInkTeam/thinkink-core-backend/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/checkout/session"
@@ -399,10 +399,7 @@ func StripeWebhookHandler(c *gin.Context) {
 	}
 
 	// Get webhook secret from env
-	webhookSecret := os.Getenv("STRIPE_WEBHOOK_SECRET")
-	if webhookSecret == "" {
-		webhookSecret = "whsec_your_webhook_secret" 
-	}
+	webhookSecret := utils.GetEnvWithDefault("STRIPE_WEBHOOK_SECRET", "whsec_your_webhook_secret")
 
 	// Verify signature
 	event, err := webhook.ConstructEvent(payload, c.GetHeader("Stripe-Signature"), webhookSecret)

@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/ThinkInkTeam/thinkink-core-backend/utils"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stripe/stripe-go/v72"
 	"golang.org/x/crypto/bcrypt"
@@ -150,10 +150,7 @@ func (u *User) GenerateJWT() (string, error) {
 	}
 
 	// Get JWT secret from environment variable or use a default for development
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "your_jwt_secret" // Default secret for development, should be configured properly in production
-	}
+	jwtSecret := utils.GetEnvWithDefault("JWT_SECRET", "your_jwt_secret")
 	
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(jwtSecret))

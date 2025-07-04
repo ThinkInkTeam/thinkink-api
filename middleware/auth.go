@@ -3,11 +3,11 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
+	"github.com/ThinkInkTeam/thinkink-core-backend/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -47,10 +47,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 
 	// Get JWT secret from environment variable or use a default for development
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		jwtSecret = "your_jwt_secret" // Default secret for development
-	}
+	jwtSecret := utils.GetEnvWithDefault("JWT_SECRET", "your_jwt_secret")
 
 		// Parse and validate token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

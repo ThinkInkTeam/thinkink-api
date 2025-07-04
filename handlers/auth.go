@@ -3,13 +3,13 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
 	"github.com/ThinkInkTeam/thinkink-core-backend/models"
 	"github.com/ThinkInkTeam/thinkink-core-backend/services/validation"
+	"github.com/ThinkInkTeam/thinkink-core-backend/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -207,7 +207,7 @@ func Logout(c *gin.Context) {
 
 	// Parse the token to get expiration time
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return []byte(utils.GetEnvWithDefault("JWT_SECRET", "your_jwt_secret")), nil
 	})
 
 	if err != nil {
@@ -352,7 +352,7 @@ func ForgotPassword(c *gin.Context) {
 	}
 	
 	// In development mode, you might want to include the token for testing
-	if os.Getenv("APP_ENV") != "production" {
+	if utils.GetEnvWithDefault("APP_ENV", "development") != "production" {
 		c.JSON(http.StatusOK, gin.H{
 			"message": response.Message,
 			"reset_token": resetToken, // Only included in non-production environments

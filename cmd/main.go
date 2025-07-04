@@ -3,15 +3,17 @@ package main
 import (
 	"log"
 	"net"
-	"os"
 	"sync"
 
 	"github.com/ThinkInkTeam/thinkink-core-backend/api"
 	"github.com/ThinkInkTeam/thinkink-core-backend/database"
+	pb "github.com/ThinkInkTeam/thinkink-core-backend/proto-gen/proto/validation"
 	"github.com/ThinkInkTeam/thinkink-core-backend/services/validation"
+	"github.com/ThinkInkTeam/thinkink-core-backend/utils"
 	"github.com/joho/godotenv"
 	"github.com/stripe/stripe-go/v72"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -23,12 +25,12 @@ func main() {
 	databaseManager := database.NewDatabaseManager()
 	
 	// Get database configuration from environment variables
-	host := getEnvWithDefault("DB_HOST", "localhost")
-	user := getEnvWithDefault("DB_USER", "postgres")
-	password := getEnvWithDefault("DB_PASSWORD", "postgres")
-	dbname := getEnvWithDefault("DB_NAME", "postgres")
-	port := getEnvWithDefault("DB_PORT", "5432")
-	sslMode := getEnvWithDefault("DB_SSL_MODE", "disable")
+	host := utils.GetEnvWithDefault("DB_HOST", "localhost")
+	user := utils.GetEnvWithDefault("DB_USER", "postgres")
+	password := utils.GetEnvWithDefault("DB_PASSWORD", "postgres")
+	dbname := utils.GetEnvWithDefault("DB_NAME", "postgres")
+	port := utils.GetEnvWithDefault("DB_PORT", "5432")
+	sslMode := utils.GetEnvWithDefault("DB_SSL_MODE", "disable")
 	
 	if err := databaseManager.Connect(host, user, password, dbname, port, sslMode); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -36,21 +38,16 @@ func main() {
 	}
 
 	// Initialize Stripe with the API key
-	stripeKey := os.Getenv("STRIPE_SECRET_KEY")
-	if stripeKey == "" {
-		// Use a default test key for development environments
-		stripeKey = "sk_test_example_key_replace_in_production"
+	stripeKey := utils.GetEnvWithDefault("STRIPE_SECRET_KEY", "sk_test_example_key_replace_in_production")
+	if stripeKey == "sk_test_example_key_replace_in_production" {
 		log.Println("Warning: Using default Stripe test key. Set STRIPE_SECRET_KEY environment variable for production.")
 	}
 	stripe.Key = stripeKey
 
 	// Determine port from environment variable or use default
-	restPort := os.Getenv("PORT")
-	if restPort == "" {
-		restPort = "8080" // Default port
-	}
+	restPort := utils.GetEnvWithDefault("PORT", "8080")
 
-	grpcPort := getEnvWithDefault("GRPC_PORT", "50051")
+	grpcPort := utils.GetEnvWithDefault("GRPC_PORT", "50051")
 
 	// Create a WaitGroup to run both servers concurrently
 	var wg sync.WaitGroup
@@ -74,15 +71,6 @@ func main() {
 	wg.Wait()
 }
 
-// getEnvWithDefault returns the environment variable value or a default if not set
-func getEnvWithDefault(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
-}
-
 // startGRPCServer starts the gRPC validation server
 func startGRPCServer(port string) {
 	lis, err := net.Listen("tcp", ":"+port)
@@ -92,7 +80,11 @@ func startGRPCServer(port string) {
 
 	grpcServer := grpc.NewServer()
 	validationServer := validation.NewServer()
-	validation.RegisterTokenValidationServiceServer(grpcServer, validationServer)
+	pb.RegisterTokenValidationServiceServer(grpcServer, validationServer)
+	
+	if utils.GetEnvWithDefault("APP_ENV", "development") != "production" {
+		reflection.Register(grpcServer)
+	}
 
 	log.Printf("gRPC server listening on port %s", port)
 	if err := grpcServer.Serve(lis); err != nil {
