@@ -7,6 +7,9 @@ gen-proto: ## Generate protobuf files
 		--go-grpc_out=proto-gen --go-grpc_opt=paths=source_relative \
 		proto/translation/translation.proto proto/validation/validation.proto
 
+gen-docs:	## Generate Swagger documentation
+	swag init -g api/server.go -o docs/
+
 db-start: ## Start postgres server on a docker container
 	@docker run --rm --name $(PQ_CONTAINER) \
 		-e POSTGRES_USER=postgres \
