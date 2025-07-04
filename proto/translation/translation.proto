@@ -9,10 +9,14 @@ service TranslationService {
   rpc Translate(TranslateRequest) returns (TranslateResponse);
 }
 
-// Request message for translation
 message TranslateRequest {
-  string token = 1;     // JWT authentication token
-  string content = 2;   // JSON string containing EEG data and mask
+  string token = 1;                // JWT authentication token
+  repeated EegRow eeg = 2;         // 2D array: list of float32 lists
+  repeated float msk = 3;          // 1D array: float32 mask
+}
+
+message EegRow {
+  repeated float values = 1;       // each row in the 2D EEG array
 }
 
 // Response message for translation

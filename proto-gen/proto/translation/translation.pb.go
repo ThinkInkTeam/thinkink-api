@@ -21,11 +21,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Request message for translation
 type TranslateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`     // JWT authentication token
-	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"` // JSON string containing EEG data and mask
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`      // JWT authentication token
+	Eeg           []*EegRow              `protobuf:"bytes,2,rep,name=eeg,proto3" json:"eeg,omitempty"`          // 2D array: list of float32 lists
+	Msk           []float32              `protobuf:"fixed32,3,rep,packed,name=msk,proto3" json:"msk,omitempty"` // 1D array: float32 mask
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,11 +67,62 @@ func (x *TranslateRequest) GetToken() string {
 	return ""
 }
 
-func (x *TranslateRequest) GetContent() string {
+func (x *TranslateRequest) GetEeg() []*EegRow {
 	if x != nil {
-		return x.Content
+		return x.Eeg
 	}
-	return ""
+	return nil
+}
+
+func (x *TranslateRequest) GetMsk() []float32 {
+	if x != nil {
+		return x.Msk
+	}
+	return nil
+}
+
+type EegRow struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Values        []float32              `protobuf:"fixed32,1,rep,packed,name=values,proto3" json:"values,omitempty"` // each row in the 2D EEG array
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EegRow) Reset() {
+	*x = EegRow{}
+	mi := &file_proto_translation_translation_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EegRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EegRow) ProtoMessage() {}
+
+func (x *EegRow) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_translation_translation_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EegRow.ProtoReflect.Descriptor instead.
+func (*EegRow) Descriptor() ([]byte, []int) {
+	return file_proto_translation_translation_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *EegRow) GetValues() []float32 {
+	if x != nil {
+		return x.Values
+	}
+	return nil
 }
 
 // Response message for translation
@@ -85,7 +136,7 @@ type TranslateResponse struct {
 
 func (x *TranslateResponse) Reset() {
 	*x = TranslateResponse{}
-	mi := &file_proto_translation_translation_proto_msgTypes[1]
+	mi := &file_proto_translation_translation_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +148,7 @@ func (x *TranslateResponse) String() string {
 func (*TranslateResponse) ProtoMessage() {}
 
 func (x *TranslateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_translation_translation_proto_msgTypes[1]
+	mi := &file_proto_translation_translation_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +161,7 @@ func (x *TranslateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TranslateResponse.ProtoReflect.Descriptor instead.
 func (*TranslateResponse) Descriptor() ([]byte, []int) {
-	return file_proto_translation_translation_proto_rawDescGZIP(), []int{1}
+	return file_proto_translation_translation_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TranslateResponse) GetTranslated() []string {
@@ -131,10 +182,13 @@ var File_proto_translation_translation_proto protoreflect.FileDescriptor
 
 const file_proto_translation_translation_proto_rawDesc = "" +
 	"\n" +
-	"#proto/translation/translation.proto\x12\vtranslation\"B\n" +
+	"#proto/translation/translation.proto\x12\vtranslation\"a\n" +
 	"\x10TranslateRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"X\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12%\n" +
+	"\x03eeg\x18\x02 \x03(\v2\x13.translation.EegRowR\x03eeg\x12\x10\n" +
+	"\x03msk\x18\x03 \x03(\x02R\x03msk\" \n" +
+	"\x06EegRow\x12\x16\n" +
+	"\x06values\x18\x01 \x03(\x02R\x06values\"X\n" +
 	"\x11TranslateResponse\x12\x1e\n" +
 	"\n" +
 	"translated\x18\x01 \x03(\tR\n" +
@@ -155,19 +209,21 @@ func file_proto_translation_translation_proto_rawDescGZIP() []byte {
 	return file_proto_translation_translation_proto_rawDescData
 }
 
-var file_proto_translation_translation_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_translation_translation_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_proto_translation_translation_proto_goTypes = []any{
 	(*TranslateRequest)(nil),  // 0: translation.TranslateRequest
-	(*TranslateResponse)(nil), // 1: translation.TranslateResponse
+	(*EegRow)(nil),            // 1: translation.EegRow
+	(*TranslateResponse)(nil), // 2: translation.TranslateResponse
 }
 var file_proto_translation_translation_proto_depIdxs = []int32{
-	0, // 0: translation.TranslationService.Translate:input_type -> translation.TranslateRequest
-	1, // 1: translation.TranslationService.Translate:output_type -> translation.TranslateResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: translation.TranslateRequest.eeg:type_name -> translation.EegRow
+	0, // 1: translation.TranslationService.Translate:input_type -> translation.TranslateRequest
+	2, // 2: translation.TranslationService.Translate:output_type -> translation.TranslateResponse
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_proto_translation_translation_proto_init() }
@@ -181,7 +237,7 @@ func file_proto_translation_translation_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_translation_translation_proto_rawDesc), len(file_proto_translation_translation_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -72,7 +72,6 @@ func UploadSignalFile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Matching scale must be between 1 and 10"})
 		return
 	}
-	
 
 	if err := os.MkdirAll(UploadDir, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Could not create upload directory"})
@@ -89,7 +88,7 @@ func UploadSignalFile(c *gin.Context) {
 	}
 
 	// Get description from form, default to empty string if not provided
-	description :=""
+	description := ""
 	
 	// If no description provided, try to get translation from ML server
 	if description == "" {
@@ -103,8 +102,8 @@ func UploadSignalFile(c *gin.Context) {
 					c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to read file"})
 					return
 				}
-				// Get translation using dummy data
-				translations, err := translationClient.TranslateEEG(authHeader, fileData)
+				// Get translation using the file data
+				translations, err := translationClient.TranslateEEGFromBytes(authHeader, fileData)
 				if err == nil && len(translations) > 0 {
 					description = strings.Join(translations, " ")
 				}
