@@ -6,27 +6,10 @@ import (
 	"github.com/ThinkInkTeam/thinkink-core-backend/docs"
 	"github.com/ThinkInkTeam/thinkink-core-backend/handlers"
 	"github.com/ThinkInkTeam/thinkink-core-backend/middleware"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
-
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Authorization, X-Requested-With")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	}
-}
 
 // @title ThinkInk API
 // @version 1.0
@@ -42,23 +25,26 @@ func CORSMiddleware() gin.HandlerFunc {
 // SetupRouter configures the API routes and returns the router
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
-	r.Use(CORSMiddleware())
-
 	// Set up Swagger
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Configure CORS
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization", "Stripe-Signature"}
-	r.Use(cors.New(config))
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
 
 	// Public routes
 	r.POST("/signin", handlers.SignIn)
 	r.POST("/signup", handlers.SignUp)
 	r.POST("/validate-ml-token", handlers.ValidateMLToken)
-	
+
 	// Stripe webhook handler - needs to be public to receive Stripe events
 	r.POST("/stripe/webhook", handlers.StripeWebhookHandler)
 
@@ -76,14 +62,14 @@ func SetupRouter() *gin.Engine {
 		// Reports routes
 		authenticated.GET("/reports", handlers.GetUserReports)
 		authenticated.GET("/reports/sorted", handlers.GetUserReportsSortedByScale)
-		
+
 		// Payment routes
 		payment := authenticated.Group("/payment")
 		{
 			// Checkout sessions
 			payment.POST("/checkout/subscription", handlers.CreateCheckoutSessionHandler)
 			payment.POST("/checkout/one-time", handlers.CreateOneTimeCheckoutHandler)
-			
+
 			// Subscription management
 			payment.GET("/subscription", handlers.GetSubscriptionHandler)
 			payment.POST("/subscription/cancel", handlers.CancelSubscriptionHandler)

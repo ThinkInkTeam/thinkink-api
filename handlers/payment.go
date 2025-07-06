@@ -19,18 +19,18 @@ import (
 
 // CreateCheckoutSessionRequest represents the request body for creating a checkout session
 type CreateCheckoutSessionRequest struct {
-	PlanID       string `json:"plan_id" binding:"required" example:"price_1Oxy3JExamplePriceID"`
-	SuccessURL   string `json:"success_url" binding:"required" example:"https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}"`
-	CancelURL    string `json:"cancel_url" binding:"required" example:"https://yourapp.com/cancel"`
+	PlanID     string `json:"plan_id" binding:"required" example:"price_1Oxy3JExamplePriceID"`
+	SuccessURL string `json:"success_url" binding:"required" example:"https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}"`
+	CancelURL  string `json:"cancel_url" binding:"required" example:"https://yourapp.com/cancel"`
 }
 
 // CreateOneTimeCheckoutRequest represents the request body for one-time checkout
 type CreateOneTimeCheckoutRequest struct {
-	Amount       int64  `json:"amount" binding:"required" example:"2000"` // Amount in cents, e.g., 2000 = $20.00
-	Currency     string `json:"currency" binding:"required" example:"usd"`
-	ProductName  string `json:"product_name" binding:"required" example:"Premium Report"`
-	SuccessURL   string `json:"success_url" binding:"required" example:"https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}"`
-	CancelURL    string `json:"cancel_url" binding:"required" example:"https://yourapp.com/cancel"`
+	Amount      int64  `json:"amount" binding:"required" example:"2000"` // Amount in cents, e.g., 2000 = $20.00
+	Currency    string `json:"currency" binding:"required" example:"usd"`
+	ProductName string `json:"product_name" binding:"required" example:"Premium Report"`
+	SuccessURL  string `json:"success_url" binding:"required" example:"https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}"`
+	CancelURL   string `json:"cancel_url" binding:"required" example:"https://yourapp.com/cancel"`
 }
 
 // CheckoutResponse is the response returned for checkout session creation
@@ -41,12 +41,12 @@ type CheckoutResponse struct {
 
 // SubscriptionResponse represents a subscription response
 type SubscriptionResponse struct {
-	HasSubscription    bool       `json:"has_subscription" example:"true"`
-	SubscriptionID     string     `json:"subscription_id,omitempty" example:"sub_12345"`
-	PlanID             string     `json:"plan_id,omitempty" example:"price_1Oxy3JExamplePriceID"`
-	Status             string     `json:"status,omitempty" example:"active"`
-	CancelAtPeriodEnd  bool       `json:"cancel_at_period_end,omitempty" example:"false"`
-	CurrentPeriodEnd   *time.Time `json:"current_period_end,omitempty"`
+	HasSubscription   bool       `json:"has_subscription" example:"true"`
+	SubscriptionID    string     `json:"subscription_id,omitempty" example:"sub_12345"`
+	PlanID            string     `json:"plan_id,omitempty" example:"price_1Oxy3JExamplePriceID"`
+	Status            string     `json:"status,omitempty" example:"active"`
+	CancelAtPeriodEnd bool       `json:"cancel_at_period_end,omitempty" example:"false"`
+	CurrentPeriodEnd  *time.Time `json:"current_period_end,omitempty"`
 }
 
 // ErrorResponse represents an error response
@@ -67,10 +67,10 @@ type CancelSubscriptionResponse struct {
 
 // SubscriptionDetails represents details about a subscription
 type SubscriptionDetails struct {
-	ID                string     `json:"id" example:"sub_12345"`
-	Status            string     `json:"status" example:"active"`
-	CancelAtPeriodEnd bool       `json:"cancel_at_period_end" example:"true"`
-	CurrentPeriodEnd  time.Time  `json:"current_period_end"`
+	ID                string    `json:"id" example:"sub_12345"`
+	Status            string    `json:"status" example:"active"`
+	CancelAtPeriodEnd bool      `json:"cancel_at_period_end" example:"true"`
+	CurrentPeriodEnd  time.Time `json:"current_period_end"`
 }
 
 // WebhookResponse represents a response for webhook processing
@@ -102,7 +102,7 @@ func CreateCheckoutSessionHandler(c *gin.Context) {
 
 	// Get authenticated user from context
 	userID := c.GetUint("userID")
-	
+
 	// Get user from database
 	db := database.DB
 	user, err := models.FindUserByID(db, userID)
@@ -123,13 +123,13 @@ func CreateCheckoutSessionHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("Error creating Stripe customer: %v", err)})
 			return
 		}
-		
+
 		// Update user with Stripe customer ID
 		if err := user.UpdateStripeData(db, newCustomer.ID, ""); err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("Error updating user data: %v", err)})
 			return
 		}
-		
+
 		customerID = newCustomer.ID
 	}
 
@@ -190,7 +190,7 @@ func CreateOneTimeCheckoutHandler(c *gin.Context) {
 
 	// Get authenticated user from context
 	userID := c.GetUint("userID")
-	
+
 	// Get user from database
 	db := database.DB
 	user, err := models.FindUserByID(db, userID)
@@ -211,13 +211,13 @@ func CreateOneTimeCheckoutHandler(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("Error creating Stripe customer: %v", err)})
 			return
 		}
-		
+
 		// Update user with Stripe customer ID
 		if err := user.UpdateStripeData(db, newCustomer.ID, ""); err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: fmt.Sprintf("Error updating user data: %v", err)})
 			return
 		}
-		
+
 		customerID = newCustomer.ID
 	}
 
@@ -275,7 +275,7 @@ func CreateOneTimeCheckoutHandler(c *gin.Context) {
 func CancelSubscriptionHandler(c *gin.Context) {
 	// Get authenticated user from context
 	userID := c.GetUint("userID")
-	
+
 	// Get user from database
 	db := database.DB
 	user, err := models.FindUserByID(db, userID)
@@ -335,7 +335,7 @@ func CancelSubscriptionHandler(c *gin.Context) {
 func GetSubscriptionHandler(c *gin.Context) {
 	// Get authenticated user from context
 	userID := c.GetUint("userID")
-	
+
 	// Get user from database
 	db := database.DB
 	user, err := models.FindUserByID(db, userID)
@@ -354,15 +354,15 @@ func GetSubscriptionHandler(c *gin.Context) {
 
 	// Get subscription details from Stripe
 	subscription, err := sub.Get(*user.SubscriptionID, nil)
-	
+
 	if err != nil {
 		// If can't retrieve from Stripe, return the local data
 		endsAt := user.SubscriptionEndsAt
-		
+
 		c.JSON(http.StatusOK, SubscriptionResponse{
-			HasSubscription: user.IsSubscribed(),
-			PlanID:         *user.CurrentPlanID,
-			Status:         *user.SubscriptionStatus,
+			HasSubscription:  user.IsSubscribed(),
+			PlanID:           *user.CurrentPlanID,
+			Status:           *user.SubscriptionStatus,
 			CurrentPeriodEnd: endsAt,
 		})
 		return
@@ -370,7 +370,7 @@ func GetSubscriptionHandler(c *gin.Context) {
 
 	// Return subscription details
 	periodEnd := time.Unix(subscription.CurrentPeriodEnd, 0)
-	
+
 	c.JSON(http.StatusOK, SubscriptionResponse{
 		HasSubscription:   subscription.Status == stripe.SubscriptionStatusActive || subscription.Status == stripe.SubscriptionStatusTrialing,
 		SubscriptionID:    subscription.ID,
@@ -429,7 +429,7 @@ func StripeWebhookHandler(c *gin.Context) {
 
 		var userID uint
 		fmt.Sscanf(userIDStr, "%d", &userID)
-		
+
 		user, err := models.FindUserByID(db, userID)
 		if err != nil {
 			fmt.Printf("User not found: %v\n", err)
@@ -449,7 +449,7 @@ func StripeWebhookHandler(c *gin.Context) {
 			if sess.Mode == stripe.CheckoutSessionModeSubscription && sess.Subscription != nil {
 				// Get subscription details
 				subscription, err := sub.Get(sess.Subscription.ID, nil)
-				
+
 				if err != nil {
 					fmt.Printf("Error retrieving subscription: %v\n", err)
 					break

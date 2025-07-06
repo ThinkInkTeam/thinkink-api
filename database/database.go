@@ -23,21 +23,21 @@ func NewDatabaseManager() *DatabaseManager {
 
 // Connect establishes a connection to the PostgreSQL database
 func (dm *DatabaseManager) Connect(host, user, password, dbname, port, sslMode string) error {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s", 
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		host, user, password, dbname, port, sslMode)
 
 	var loggerConfig logger.Interface
-    enableDBLogs := getEnvWithDefault("DB_ENABLE_LOGS", "false")
-    
-    if enableDBLogs == "true" {
-        loggerConfig = logger.Default.LogMode(logger.Info)
-    } else {
-        loggerConfig = logger.Default.LogMode(logger.Silent)
-    }
-	
-	db, err := gorm.Open(postgres.Open(dsn),  &gorm.Config{
-        Logger: loggerConfig,
-    })
+	enableDBLogs := getEnvWithDefault("DB_ENABLE_LOGS", "false")
+
+	if enableDBLogs == "true" {
+		loggerConfig = logger.Default.LogMode(logger.Info)
+	} else {
+		loggerConfig = logger.Default.LogMode(logger.Silent)
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: loggerConfig,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -56,11 +56,11 @@ func (dm *DatabaseManager) MigrateModels() error {
 	if dm.DB == nil {
 		return fmt.Errorf("database connection not established")
 	}
-	
+
 	return dm.DB.AutoMigrate(
-		&models.User{}, 
-		&models.Report{}, 
-		&models.BlacklistedToken{}, 
+		&models.User{},
+		&models.Report{},
+		&models.BlacklistedToken{},
 		&models.SingleFile{},
 	)
 }
@@ -75,12 +75,12 @@ func (dm *DatabaseManager) Close() error {
 	if dm.DB == nil {
 		return nil
 	}
-	
+
 	sqlDB, err := dm.DB.DB()
 	if err != nil {
 		return err
 	}
-	
+
 	return sqlDB.Close()
 }
 

@@ -16,17 +16,17 @@ import (
 
 // SignUpRequest represents the request for user registration
 type SignUpRequest struct {
-	Name         string                 `json:"name" binding:"required" example:"John Doe"`
-	Email        string                 `json:"email" binding:"required,email" example:"john@example.com"`
-	Password     string                 `json:"password" binding:"required,min=8" example:"password123"`
-	DateOfBirth  time.Time              `json:"date_of_birth" binding:"required" example:"1990-01-01T00:00:00Z"`
-	Mobile       string                 `json:"mobile" example:"5551234567"`
-	CountryCode  string                 `json:"country_code" example:"+1"`
-	Address      string                 `json:"address" example:"123 Main St"`
-	City         string                 `json:"city" example:"New York"`
-	Country      string                 `json:"country" example:"US"`
-	PostalCode   string                 `json:"postal_code" example:"10001"`
-	PaymentInfo  map[string]interface{} `json:"payment_info" swaggertype:"object,string" example:"{\"card_type\":\"visa\"}"`
+	Name        string                 `json:"name" binding:"required" example:"John Doe"`
+	Email       string                 `json:"email" binding:"required,email" example:"john@example.com"`
+	Password    string                 `json:"password" binding:"required,min=8" example:"password123"`
+	DateOfBirth time.Time              `json:"date_of_birth" binding:"required" example:"1990-01-01T00:00:00Z"`
+	Mobile      string                 `json:"mobile" example:"5551234567"`
+	CountryCode string                 `json:"country_code" example:"+1"`
+	Address     string                 `json:"address" example:"123 Main St"`
+	City        string                 `json:"city" example:"New York"`
+	Country     string                 `json:"country" example:"US"`
+	PostalCode  string                 `json:"postal_code" example:"10001"`
+	PaymentInfo map[string]interface{} `json:"payment_info" swaggertype:"object,string" example:"{\"card_type\":\"visa\"}"`
 }
 
 // SignInRequest represents the request for user authentication
@@ -37,9 +37,9 @@ type SignInRequest struct {
 
 // AuthResponse represents the response for authentication endpoints
 type AuthResponse struct {
-	Message string      `json:"message" example:"Login successful"`
-	User    UserInfo    `json:"user"`
-	Token   string      `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	Message string   `json:"message" example:"Login successful"`
+	User    UserInfo `json:"user"`
+	Token   string   `json:"token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
 }
 
 // UserInfo represents basic user information
@@ -350,11 +350,11 @@ func ForgotPassword(c *gin.Context) {
 	response := ForgotPasswordResponse{
 		Message: "Password reset instructions sent to your email",
 	}
-	
+
 	// In development mode, you might want to include the token for testing
 	if utils.GetEnvWithDefault("APP_ENV", "development") != "production" {
 		c.JSON(http.StatusOK, gin.H{
-			"message": response.Message,
+			"message":     response.Message,
 			"reset_token": resetToken, // Only included in non-production environments
 		})
 	} else {

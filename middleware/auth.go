@@ -31,23 +31,23 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-	tokenString := parts[1]
+		tokenString := parts[1]
 
-	// Check if token is blacklisted
-	isBlacklisted, err := models.IsTokenBlacklisted(database.DB, tokenString)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Authentication error"})
-		c.Abort()
-		return
-	}
-	if isBlacklisted {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been revoked"})
-		c.Abort()
-		return
-	}
+		// Check if token is blacklisted
+		isBlacklisted, err := models.IsTokenBlacklisted(database.DB, tokenString)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Authentication error"})
+			c.Abort()
+			return
+		}
+		if isBlacklisted {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has been revoked"})
+			c.Abort()
+			return
+		}
 
-	// Get JWT secret from environment variable or use a default for development
-	jwtSecret := utils.GetEnvWithDefault("JWT_SECRET", "your_jwt_secret")
+		// Get JWT secret from environment variable or use a default for development
+		jwtSecret := utils.GetEnvWithDefault("JWT_SECRET", "your_jwt_secret")
 
 		// Parse and validate token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

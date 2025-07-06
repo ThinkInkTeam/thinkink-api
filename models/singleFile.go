@@ -28,7 +28,7 @@ func (sf *SingleFile) ConvertToReport() (*Report, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-	
+
 	// Attempt to parse the JSON
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal(fileData, &jsonData); err != nil {
@@ -38,17 +38,17 @@ func (sf *SingleFile) ConvertToReport() (*Report, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %w", err)
 	}
-	
+
 	// Create and return the report without saving to database
 	report := &Report{
-		UserID:			sf.UserID,
-		Title:			sf.Filename,
-		Description: 	sf.Description,
-		Content:       	datatypes.JSON(content),
-		MatchingScale: 	0,
-		CreatedAt:  	time.Now(),
+		UserID:        sf.UserID,
+		Title:         sf.Filename,
+		Description:   sf.Description,
+		Content:       datatypes.JSON(content),
+		MatchingScale: 0,
+		CreatedAt:     time.Now(),
 	}
-	
+
 	return report, nil
 }
 
@@ -59,16 +59,15 @@ func CreateSingleFile(userID uint, originalFilename, filePath, description strin
 	if err != nil {
 		return nil, fmt.Errorf("file error: %w", err)
 	}
-	
+
 	singleFile := &SingleFile{
-		UserID:     userID,
-		Filename:   originalFilename,
-		FilePath:   filePath,
+		UserID:      userID,
+		Filename:    originalFilename,
+		FilePath:    filePath,
 		Description: description,
-		UploadedAt: time.Now(),
-		FileSize:   fileInfo.Size(),
+		UploadedAt:  time.Now(),
+		FileSize:    fileInfo.Size(),
 	}
-	
+
 	return singleFile, nil
 }
-

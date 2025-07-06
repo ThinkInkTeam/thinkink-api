@@ -89,12 +89,12 @@ func UploadSignalFile(c *gin.Context) {
 
 	// Get description from form, default to empty string if not provided
 	description := ""
-	
+
 	// If no description provided, try to get translation from ML server
 	if description == "" {
 		if authHeader := c.GetHeader("Authorization"); authHeader != "" {
 			// Connect to translation service
-			translationClient, err := services.NewTranslationClient("localhost:50052")
+			translationClient, err := services.NewTranslationClient("ml-service:50052")
 			if err == nil {
 				defer translationClient.Close()
 				fileData, err := os.ReadFile(filePath)
@@ -133,7 +133,7 @@ func UploadSignalFile(c *gin.Context) {
 
 	// Set the matching scale provided by the user
 	report.MatchingScale = matchingScale
-	
+
 	// Use the CreateReport method to save the report to the database
 	savedReport, err := report.CreateReport(database.DB, userID.(uint))
 	if err != nil {

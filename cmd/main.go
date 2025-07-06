@@ -17,13 +17,10 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	_ = godotenv.Load()
 	// Initialize database connection using environment variables
 	databaseManager := database.NewDatabaseManager()
-	
+
 	// Get database configuration from environment variables
 	host := utils.GetEnvWithDefault("DB_HOST", "localhost")
 	user := utils.GetEnvWithDefault("DB_USER", "postgres")
@@ -31,7 +28,7 @@ func main() {
 	dbname := utils.GetEnvWithDefault("DB_NAME", "postgres")
 	port := utils.GetEnvWithDefault("DB_PORT", "5432")
 	sslMode := utils.GetEnvWithDefault("DB_SSL_MODE", "disable")
-	
+
 	if err := databaseManager.Connect(host, user, password, dbname, port, sslMode); err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 		return
@@ -81,7 +78,7 @@ func startGRPCServer(port string) {
 	grpcServer := grpc.NewServer()
 	validationServer := validation.NewServer()
 	pb.RegisterTokenValidationServiceServer(grpcServer, validationServer)
-	
+
 	if utils.GetEnvWithDefault("APP_ENV", "development") != "production" {
 		reflection.Register(grpcServer)
 	}

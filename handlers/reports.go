@@ -43,21 +43,21 @@ func GetUserReports(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
 		return
 	}
-	
+
 	// Fetch user from database
 	user, err := models.FindUserByID(database.DB, userID.(uint))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to fetch user"})
 		return
 	}
-	
+
 	// Get all reports for the user
 	reports, err := user.FindAllUserReports(database.DB)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to fetch reports"})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, ReportsResponse{
 		Reports: reports,
 	})
@@ -81,33 +81,33 @@ func GetUserReportsSortedByScale(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
 		return
 	}
-	
+
 	// Parse sort direction from query parameter
 	ascendingParam := c.DefaultQuery("asc", "false")
 	ascending, err := strconv.ParseBool(ascendingParam)
 	if err != nil {
 		ascending = false // Default to descending (highest matching scale first)
 	}
-	
+
 	// Fetch user from database
 	user, err := models.FindUserByID(database.DB, userID.(uint))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to fetch user"})
 		return
 	}
-	
+
 	// Get reports sorted by matching scale
 	reports, err := user.FindAllUserReportsSortedByScale(database.DB, ascending)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to fetch sorted reports"})
 		return
 	}
-	
+
 	orderText := "descending"
 	if ascending {
 		orderText = "ascending"
 	}
-	
+
 	c.JSON(http.StatusOK, SortedReportsResponse{
 		Reports: reports,
 		Sorting: SortingInfo{

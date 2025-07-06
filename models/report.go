@@ -16,7 +16,7 @@ type Report struct {
 	Content       datatypes.JSON `gorm:"type:json" json:"content" swaggertype:"string" example:"{\"key\":\"value\"}"`
 	CreatedAt     time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP" json:"updated_at"`
-	MatchingScale int        `gorm:"type:numeric(5,2);default:0" json:"matching_scale"`
+	MatchingScale int            `gorm:"type:numeric(5,2);default:0" json:"matching_scale"`
 }
 
 // BeforeSave automatically updates the UpdatedAt field

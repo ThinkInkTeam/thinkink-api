@@ -16,28 +16,28 @@ import (
 )
 
 type User struct {
-	ID                uint           `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name              string         `gorm:"type:text;not null" json:"name"`
-	Email             string         `gorm:"type:text;unique;not null" json:"email"`
-	PasswordHash      string         `gorm:"type:text;not null" json:"password"`
-	DateOfBirth       time.Time      `gorm:"type:date;not null" json:"date_of_birth"`
-	Mobile            string         `gorm:"type:varchar(15)" json:"mobile,omitempty"`
-	CountryCode       string         `gorm:"type:varchar(5)" json:"country_code,omitempty"`
-	Address           string         `gorm:"type:text" json:"address,omitempty"`
-	City              string         `gorm:"type:text" json:"city,omitempty"`
-	Country           string         `gorm:"type:text" json:"country,omitempty"`
-	PostalCode        string         `gorm:"type:text" json:"postal_code,omitempty"`
-	PaymentInfo       datatypes.JSON `gorm:"type:json" json:"payment_info,omitempty" swaggertype:"string" example:"{\"card_type\":\"visa\"}"`
-	CreatedAt         time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP" json:"created_at"`
-	LastLogin         *time.Time     `gorm:"type:timestamp" json:"last_login,omitempty"`
-	Reports           []Report       `gorm:"foreignKey:UserID" json:"reports"`
+	ID           uint           `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name         string         `gorm:"type:text;not null" json:"name"`
+	Email        string         `gorm:"type:text;unique;not null" json:"email"`
+	PasswordHash string         `gorm:"type:text;not null" json:"password"`
+	DateOfBirth  time.Time      `gorm:"type:date;not null" json:"date_of_birth"`
+	Mobile       string         `gorm:"type:varchar(15)" json:"mobile,omitempty"`
+	CountryCode  string         `gorm:"type:varchar(5)" json:"country_code,omitempty"`
+	Address      string         `gorm:"type:text" json:"address,omitempty"`
+	City         string         `gorm:"type:text" json:"city,omitempty"`
+	Country      string         `gorm:"type:text" json:"country,omitempty"`
+	PostalCode   string         `gorm:"type:text" json:"postal_code,omitempty"`
+	PaymentInfo  datatypes.JSON `gorm:"type:json" json:"payment_info,omitempty" swaggertype:"string" example:"{\"card_type\":\"visa\"}"`
+	CreatedAt    time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP" json:"created_at"`
+	LastLogin    *time.Time     `gorm:"type:timestamp" json:"last_login,omitempty"`
+	Reports      []Report       `gorm:"foreignKey:UserID" json:"reports"`
 	// Stripe fields
-	StripeCustomerID  *string         `gorm:"type:text;uniqueIndex" json:"stripe_customer_id,omitempty"`
-	StripeDefaultPM   *string         `gorm:"type:text" json:"stripe_default_payment_method,omitempty"`
-	CurrentPlanID     *string         `gorm:"type:text" json:"current_plan_id,omitempty"`
-	SubscriptionID    *string         `gorm:"type:text" json:"subscription_id,omitempty"`
-	SubscriptionStatus *string        `gorm:"type:text" json:"subscription_status,omitempty"`
-	SubscriptionEndsAt *time.Time    `gorm:"type:timestamp" json:"subscription_ends_at,omitempty"`
+	StripeCustomerID   *string    `gorm:"type:text;uniqueIndex" json:"stripe_customer_id,omitempty"`
+	StripeDefaultPM    *string    `gorm:"type:text" json:"stripe_default_payment_method,omitempty"`
+	CurrentPlanID      *string    `gorm:"type:text" json:"current_plan_id,omitempty"`
+	SubscriptionID     *string    `gorm:"type:text" json:"subscription_id,omitempty"`
+	SubscriptionStatus *string    `gorm:"type:text" json:"subscription_status,omitempty"`
+	SubscriptionEndsAt *time.Time `gorm:"type:timestamp" json:"subscription_ends_at,omitempty"`
 }
 
 // New function for Stripe integration
@@ -48,12 +48,12 @@ func (u *User) ToStripeCustomerParams() *stripe.CustomerParams {
 		Name:  stripe.String(u.Name),
 		Email: stripe.String(u.Email),
 	}
-	
+
 	if u.Mobile != "" && u.CountryCode != "" {
 		phone := u.CountryCode + u.Mobile
 		params.Phone = stripe.String(phone)
 	}
-	
+
 	if u.Address != "" && u.City != "" && u.Country != "" {
 		params.Address = &stripe.AddressParams{
 			Line1:      stripe.String(u.Address),
@@ -62,7 +62,7 @@ func (u *User) ToStripeCustomerParams() *stripe.CustomerParams {
 			PostalCode: stripe.String(u.PostalCode),
 		}
 	}
-	
+
 	return params
 }
 
@@ -72,7 +72,7 @@ func (u *User) UpdateStripeData(db *gorm.DB, customerID string, defaultPM string
 	u.StripeDefaultPM = &defaultPM
 	return db.Model(u).Updates(map[string]interface{}{
 		"stripe_customer_id": customerID,
-		"stripe_default_pm": defaultPM,
+		"stripe_default_pm":  defaultPM,
 	}).Error
 }
 
@@ -82,11 +82,11 @@ func (u *User) UpdateSubscriptionData(db *gorm.DB, subscriptionID, planID, statu
 	u.CurrentPlanID = &planID
 	u.SubscriptionStatus = &status
 	u.SubscriptionEndsAt = endsAt
-	
+
 	return db.Model(u).Updates(map[string]interface{}{
-		"subscription_id": subscriptionID,
-		"current_plan_id": planID,
-		"subscription_status": status,
+		"subscription_id":      subscriptionID,
+		"current_plan_id":      planID,
+		"subscription_status":  status,
 		"subscription_ends_at": endsAt,
 	}).Error
 }
@@ -142,7 +142,7 @@ func (u *User) HashPassword(password string) error {
 func (u *User) GenerateJWT() (string, error) {
 	// Set JWT expiration to 24 hours
 	expirationTime := time.Now().Add(24 * time.Hour)
-	
+
 	claims := jwt.MapClaims{
 		"userID": u.ID,
 		"email":  u.Email,
@@ -151,10 +151,10 @@ func (u *User) GenerateJWT() (string, error) {
 
 	// Get JWT secret from environment variable or use a default for development
 	jwtSecret := utils.GetEnvWithDefault("JWT_SECRET", "your_jwt_secret")
-	
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(jwtSecret))
-	
+
 	return tokenString, err
 }
 
@@ -216,32 +216,32 @@ func CreateUser(db *gorm.DB, name, email, password string, dateOfBirth time.Time
 // FindAllUserReports retrieves all reports belonging to the user
 func (u *User) FindAllUserReports(db *gorm.DB) ([]Report, error) {
 	var reports []Report
-	
+
 	err := db.Where("user_id = ?", u.ID).Find(&reports).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch reports: %w", err)
 	}
-	
+
 	return reports, nil
 }
 
 // FindAllUserReportsSortedByScale retrieves all reports belonging to the user sorted by matching scale
 func (u *User) FindAllUserReportsSortedByScale(db *gorm.DB, ascending bool) ([]Report, error) {
 	var reports []Report
-	
+
 	query := db.Where("user_id = ?", u.ID)
-	
+
 	if ascending {
 		query = query.Order("matching_scale asc")
 	} else {
 		query = query.Order("matching_scale desc")
 	}
-	
+
 	err := query.Find(&reports).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch sorted reports: %w", err)
 	}
-	
+
 	return reports, nil
 }
 
@@ -286,12 +286,12 @@ func (u *User) GeneratePasswordResetToken(db *gorm.DB) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error generating token: %w", err)
 	}
-	
+
 	token := base64.URLEncoding.EncodeToString(b)
-	
+
 	// Set expiration to 1 hour from now
 	expiresAt := time.Now().Add(1 * time.Hour)
-	
+
 	// Create password reset record
 	reset := PasswordReset{
 		UserID:    u.ID,
@@ -299,12 +299,12 @@ func (u *User) GeneratePasswordResetToken(db *gorm.DB) (string, error) {
 		ExpiresAt: expiresAt,
 		Used:      false,
 	}
-	
+
 	// Save to database
 	if err := db.Create(&reset).Error; err != nil {
 		return "", fmt.Errorf("error saving reset token: %w", err)
 	}
-	
+
 	return token, nil
 }
 
@@ -317,18 +317,18 @@ func VerifyPasswordResetToken(db *gorm.DB, token string) (*User, error) {
 		}
 		return nil, fmt.Errorf("database error: %w", err)
 	}
-	
+
 	// Mark token as used
 	if err := db.Model(&reset).Updates(map[string]interface{}{"used": true}).Error; err != nil {
 		return nil, fmt.Errorf("error updating token: %w", err)
 	}
-	
+
 	// Get associated user
 	user, err := FindUserByID(db, reset.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %w", err)
 	}
-	
+
 	return user, nil
 }
 
@@ -338,7 +338,7 @@ func (u *User) UpdatePassword(db *gorm.DB, newPassword string) error {
 	if err := u.HashPassword(newPassword); err != nil {
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
-	
+
 	// Update in database
 	return db.Model(u).Update("password_hash", u.PasswordHash).Error
 }

@@ -16,7 +16,7 @@ type UserResponse struct {
 
 // UserUpdateResponse represents a response after updating a user
 type UserUpdateResponse struct {
-	Message string     `json:"message" example:"User updated successfully"`
+	Message string      `json:"message" example:"User updated successfully"`
 	User    models.User `json:"user"`
 }
 
@@ -54,30 +54,30 @@ func GetUser(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
 		return
 	}
-	
+
 	// Get requested user ID from path
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid user ID"})
 		return
 	}
-	
+
 	// Check if user is requesting their own profile
 	if authenticatedUserID.(uint) != uint(userID) {
 		c.JSON(http.StatusForbidden, ErrorResponse{Error: "You can only view your own profile"})
 		return
 	}
-	
+
 	// Fetch user from database
 	user, err := models.FindUserByID(database.DB, uint(userID))
 	if err != nil {
 		c.JSON(http.StatusNotFound, ErrorResponse{Error: "User not found"})
 		return
 	}
-	
+
 	// Clear sensitive fields
 	user.PasswordHash = ""
-	
+
 	c.JSON(http.StatusOK, UserResponse{User: *user})
 }
 
@@ -104,34 +104,34 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
 		return
 	}
-	
+
 	// Get requested user ID from path
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid user ID"})
 		return
 	}
-	
+
 	// Check if user is updating their own profile
 	if authenticatedUserID.(uint) != uint(userID) {
 		c.JSON(http.StatusForbidden, ErrorResponse{Error: "You can only update your own profile"})
 		return
 	}
-	
+
 	// Parse update request
 	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
-	
+
 	// Fetch user from database
 	user, err := models.FindUserByID(database.DB, uint(userID))
 	if err != nil {
 		c.JSON(http.StatusNotFound, ErrorResponse{Error: "User not found"})
 		return
 	}
-	
+
 	// Update fields if provided
 	if req.Name != "" {
 		user.Name = req.Name
@@ -163,16 +163,16 @@ func UpdateUser(c *gin.Context) {
 		// }
 		// user.PaymentInfo = paymentInfoJSON
 	}
-	
+
 	// Save to database
 	if err := database.DB.Save(user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to update user"})
 		return
 	}
-	
+
 	// Clear sensitive fields
 	user.PasswordHash = ""
-	
+
 	c.JSON(http.StatusOK, UserUpdateResponse{
 		Message: "User updated successfully",
 		User:    *user,
