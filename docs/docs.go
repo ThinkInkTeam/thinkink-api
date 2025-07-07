@@ -136,6 +136,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/match": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the matching scale for a report that belongs to the authenticated user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Update report matching scale",
+                "parameters": [
+                    {
+                        "description": "Match report request",
+                        "name": "match",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MatchReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Report matching scale updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.MatchReportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Report not found",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/payment/checkout/one-time": {
             "post": {
                 "security": [
@@ -1048,6 +1111,35 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Password reset instructions sent to your email"
+                }
+            }
+        },
+        "handlers.MatchReportRequest": {
+            "type": "object",
+            "required": [
+                "matching_scale",
+                "report_id"
+            ],
+            "properties": {
+                "matching_scale": {
+                    "type": "integer",
+                    "example": 85
+                },
+                "report_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "handlers.MatchReportResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Report matching scale updated successfully"
+                },
+                "report": {
+                    "$ref": "#/definitions/models.Report"
                 }
             }
         },

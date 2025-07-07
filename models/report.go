@@ -16,7 +16,7 @@ type Report struct {
 	Content       datatypes.JSON `gorm:"type:json" json:"content" swaggertype:"string" example:"{\"key\":\"value\"}"`
 	CreatedAt     time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"type:timestamp;default:CURRENT_TIMESTAMP" json:"updated_at"`
-	MatchingScale int            `gorm:"type:numeric(5,2);default:0" json:"matching_scale"`
+	MatchingScale int            `gorm:"type:int;default:0" json:"matching_scale"`
 }
 
 // BeforeSave automatically updates the UpdatedAt field
@@ -39,4 +39,20 @@ func (r *Report) CreateReport(db *gorm.DB, userID uint) (*Report, error) {
 	}
 
 	return r, nil
+}
+
+// FindReportByIDForUser finds a report by ID that belongs to a specific user
+func FindReportByIDForUser(db *gorm.DB, reportID uint, userID uint) (*Report, error) {
+	var report Report
+	result := db.Where("id = ? AND user_id = ?", reportID, userID).First(&report)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &report, nil
+}
+
+// UpdateMatchingScale updates the matching scale for a report
+func (r *Report) UpdateMatchingScale(db *gorm.DB, matchingScale int) error {
+	r.MatchingScale = matchingScale
+	return db.Model(r).Update("matching_scale", matchingScale).Error
 }

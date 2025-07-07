@@ -116,3 +116,73 @@ func GetUserReportsSortedByScale(c *gin.Context) {
 		},
 	})
 }
+
+// MatchReportRequest represents the request body for updating a report's matching scale
+type MatchReportRequest struct {
+	ReportID      uint `json:"report_id" binding:"required" example:"1"`
+	MatchingScale int  `json:"matching_scale" binding:"required" example:"85"`
+}
+
+// MatchReportResponse represents the response for a successful match update
+type MatchReportResponse struct {
+	Message string        `json:"message" example:"Report matching scale updated successfully"`
+	Report  models.Report `json:"report"`
+}
+
+// UpdateReportMatchingScale updates the matching scale for a specific report
+// @Summary Update report matching scale
+// @Description Updates the matching scale for a report that belongs to the authenticated user
+// @Tags reports
+// @Accept json
+// @Produce json
+// @Param match body MatchReportRequest true "Match report request"
+// @Success 200 {object} MatchReportResponse "Report matching scale updated successfully"
+// @Failure 400 {object} ErrorResponse "Bad Request"
+// @Failure 401 {object} ErrorResponse "Unauthorized"
+// @Failure 404 {object} ErrorResponse "Report not found"
+// @Failure 500 {object} ErrorResponse "Internal Server Error"
+// @Security BearerAuth
+// @Router /match [post]
+func UpdateReportMatchingScale(c *gin.Context) {
+	// Get authenticated user ID
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, ErrorResponse{Error: "Unauthorized"})
+		return
+	}
+
+	// Parse request body
+	var req MatchReportRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request body: " + err.Error()})
+		return
+	}
+
+	// Validate matching scale range (0-100)
+	if req.MatchingScale < 0 || req.MatchingScale > 100 {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Matching scale must be between 0 and 100"})
+		return
+	}
+
+	// Find the report and ensure it belongs to the authenticated user
+	report, err := models.FindReportByIDForUser(database.DB, req.ReportID, userID.(uint))
+	if err != nil {
+		if err.Error() == "record not found" {
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: "Report not found or doesn't belong to you"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to fetch report"})
+		return
+	}
+
+	// Update the matching scale
+	if err := report.UpdateMatchingScale(database.DB, req.MatchingScale); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to update matching scale"})
+		return
+	}
+
+	c.JSON(http.StatusOK, MatchReportResponse{
+		Message: "Report matching scale updated successfully",
+		Report:  *report,
+	})
+}

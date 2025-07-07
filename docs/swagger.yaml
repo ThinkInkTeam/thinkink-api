@@ -107,6 +107,26 @@ definitions:
         example: Password reset instructions sent to your email
         type: string
     type: object
+  handlers.MatchReportRequest:
+    properties:
+      matching_scale:
+        example: 85
+        type: integer
+      report_id:
+        example: 1
+        type: integer
+    required:
+    - matching_scale
+    - report_id
+    type: object
+  handlers.MatchReportResponse:
+    properties:
+      message:
+        example: Report matching scale updated successfully
+        type: string
+      report:
+        $ref: '#/definitions/models.Report'
+    type: object
   handlers.MessageResponse:
     properties:
       message:
@@ -478,6 +498,47 @@ paths:
       summary: User logout
       tags:
       - auth
+  /match:
+    post:
+      consumes:
+      - application/json
+      description: Updates the matching scale for a report that belongs to the authenticated
+        user
+      parameters:
+      - description: Match report request
+        in: body
+        name: match
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.MatchReportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Report matching scale updated successfully
+          schema:
+            $ref: '#/definitions/handlers.MatchReportResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Report not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update report matching scale
+      tags:
+      - reports
   /payment/checkout/one-time:
     post:
       consumes:

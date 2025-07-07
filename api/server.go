@@ -62,6 +62,7 @@ func SetupRouter() *gin.Engine {
 		// Reports routes
 		authenticated.GET("/reports", handlers.GetUserReports)
 		authenticated.GET("/reports/sorted", handlers.GetUserReportsSortedByScale)
+		authenticated.POST("/match", handlers.UpdateReportMatchingScale)
 
 		// Payment routes
 		payment := authenticated.Group("/payment")
